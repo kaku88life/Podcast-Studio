@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Podcast Studio 工具確認表</title>
+<style>
+  :root{
+    --bg:#ffffff; --surface:#faf9f5; --surface2:#f3f1ea;
+    --text:#201f1c; --muted:#6b6a63; --hint:#97968d;
+    --border:rgba(0,0,0,.12); --border2:rgba(0,0,0,.24);
+    --info:#185FA5; --infobg:#E6F1FB;
+    --radius:12px; --radius-sm:8px;
+    --a:#185FA5; --b:#993556;            /* 主持人 A / B 代表色 */
+    --wait:#888780; --cand:#1D9E75; --drop:#D85A30;  /* 待定/候選/淘汰 */
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--surface2); color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI","Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
+    line-height:1.5; padding:0 0 calc(2rem + env(safe-area-inset-bottom));}
+  .wrap{max-width:920px; margin:0 auto; padding:1.2rem 1rem 0;}
+  a{color:var(--info);}
+
+  header h1{font-size:1.3rem; margin:0 0 .2rem;}
+  header p{margin:.15rem 0; color:var(--muted); font-size:.85rem;}
+  .nav{display:flex; gap:.5rem; margin:.5rem 0 .2rem; font-size:.82rem;}
+  .nav a{padding:.25rem .6rem; border:1px solid var(--border); border-radius:999px; text-decoration:none; background:var(--bg); color:var(--muted);}
+  .nav a.here{background:var(--info); color:#fff; border-color:var(--info);}
+
+  /* 控制列 */
+  .bar{position:sticky; top:0; z-index:10; background:var(--surface2); padding:.6rem 0 .4rem; border-bottom:1px solid var(--border); margin-bottom:.6rem;}
+  .bar-row{display:flex; align-items:center; gap:.6rem; flex-wrap:wrap;}
+  .who{display:flex; align-items:center; gap:.4rem; font-size:.82rem;}
+  .who .seg{display:inline-flex; border:1px solid var(--border2); border-radius:999px; overflow:hidden;}
+  .who .seg button{font:inherit; font-size:.8rem; border:0; background:var(--bg); color:var(--muted); padding:.28rem .7rem; cursor:pointer;}
+  .who .seg button.on[data-r="0"]{background:var(--a); color:#fff;}
+  .who .seg button.on[data-r="1"]{background:var(--b); color:#fff;}
+  .sync{font-size:.74rem; color:var(--hint); display:inline-flex; align-items:center; gap:.25rem;}
+  .sync.on{color:#0F6E56;}
+  .spacer{flex:1;}
+  .mytally{font-size:.78rem; color:var(--muted);}
+
+  /* 分頁 tab */
+  .tabs{display:flex; gap:.4rem; overflow-x:auto; padding:.2rem 0 .5rem; -webkit-overflow-scrolling:touch;}
+  .tabs button{font:inherit; font-size:.82rem; white-space:nowrap; border:1px solid var(--border); background:var(--bg); color:var(--muted); padding:.32rem .7rem; border-radius:999px; cursor:pointer; flex:0 0 auto;}
+  .tabs button.on{background:var(--text); color:var(--bg); border-color:var(--text);}
+
+  .picking{font-size:.9rem; color:var(--text); background:var(--infobg); border:1px solid var(--border); border-radius:var(--radius-sm); padding:.5rem .7rem; margin:.3rem 0 .5rem;}
+  .crit{display:flex; flex-wrap:wrap; gap:.35rem; margin-bottom:.7rem;}
+  .cchip{font-size:.72rem; color:var(--muted); background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:.16rem .5rem;}
+
+  /* 工具卡 */
+  details.tool{background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:.6rem; overflow:hidden;}
+  details.tool[open]{border-color:var(--border2);}
+  summary{list-style:none; cursor:pointer; padding:.6rem .8rem; display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;}
+  summary::-webkit-details-marker{display:none;}
+  .tname{font-weight:650; font-size:.95rem;}
+  .ttype{font-size:.68rem; color:var(--muted); background:var(--surface2); border:1px solid var(--border); border-radius:999px; padding:.1rem .45rem;}
+  .leans{margin-left:auto; display:flex; gap:.3rem; align-items:center;}
+  .lb{font-size:.68rem; padding:.1rem .45rem; border-radius:999px; border:1px solid;}
+  .lb.wait{color:#5F5E5A; border-color:#B4B2A9; background:#F1EFE8;}
+  .lb.cand{color:#0F6E56; border-color:#5DCAA5; background:#E1F5EE;}
+  .lb.drop{color:#993C1D; border-color:#F0997B; background:#FAECE7;}
+  .lb.muted{opacity:.45;}
+  .triedmini{font-size:.66rem; color:var(--hint);}
+
+  .body{padding:.2rem .8rem .8rem; border-top:1px dashed var(--border);}
+  .spec{font-size:.85rem; color:var(--text); margin:.55rem 0;}
+  .kv{font-size:.8rem; color:var(--muted); margin:.2rem 0;}
+  .kv b{color:var(--text); font-weight:600; margin-right:.35rem;}
+
+  .rev{margin-top:.7rem; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:.6rem .7rem;}
+  .revhd{font-size:.8rem; font-weight:650; margin-bottom:.5rem;}
+  .revhd .me0{color:var(--a);} .revhd .me1{color:var(--b);}
+  .field{display:flex; align-items:center; gap:.5rem; margin:.35rem 0; flex-wrap:wrap;}
+  .flabel{font-size:.78rem; color:var(--muted); width:3.2em; flex:0 0 auto;}
+  .seg2{display:inline-flex; border:1px solid var(--border2); border-radius:var(--radius-sm); overflow:hidden;}
+  .seg2 button{font:inherit; font-size:.76rem; border:0; border-right:1px solid var(--border); background:var(--bg); color:var(--muted); padding:.24rem .55rem; cursor:pointer; min-height:32px;}
+  .seg2 button:last-child{border-right:0;}
+  .seg2 button.on{background:var(--info); color:#fff;}
+  .seg2.lean button.on[data-v="0"]{background:var(--wait);}
+  .seg2.lean button.on[data-v="1"]{background:var(--cand);}
+  .seg2.lean button.on[data-v="2"]{background:var(--drop);}
+  .stars{display:inline-flex; gap:.15rem;}
+  .stars button{font:inherit; font-size:.95rem; line-height:1; border:0; background:transparent; color:var(--border2); cursor:pointer; padding:.1rem .12rem; min-width:30px; min-height:30px;}
+  .stars button.on{color:#EF9F27;}
+  textarea.note{width:100%; font:inherit; font-size:.8rem; border:1px solid var(--border); border-radius:var(--radius-sm); padding:.4rem .5rem; resize:vertical; min-height:42px; margin-top:.3rem; background:var(--bg); color:var(--text);}
+  textarea.note:focus{outline:2px solid var(--infobg);}
+
+  .other{margin-top:.55rem; font-size:.78rem; color:var(--muted); border-top:1px dashed var(--border); padding-top:.5rem;}
+  .other .nm0{color:var(--a); font-weight:600;} .other .nm1{color:var(--b); font-weight:600;}
+  .other .onote{color:var(--hint); font-style:italic;}
+
+  .foot{font-size:.76rem; color:var(--hint); margin:1rem 0 0; line-height:1.6;}
+  @media (max-width:560px){ .flabel{width:100%;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>工具確認表（資源蒐集中・尚未決定）</h1>
+    <p>每個製作環節把<strong>所有可選工具</strong>中立列出來，兩人各自試用後評分對照。這裡<strong>不下推薦、不排名</strong>——傾向只有「待定／候選／淘汰」，最後由你們自己拍板。</p>
+    <nav class="nav">
+      <a href="board.html">節目看板</a>
+      <a class="here" href="tools-checklist.html">工具確認表</a>
+      <a href="prep-checklist.html">資源準備清單</a>
+    </nav>
+  </header>
+
+  <div class="bar">
+    <div class="bar-row">
+      <span class="who">我是誰：
+        <span class="seg" id="whoSeg">
+          <button data-r="0" onclick="setMe(0)">主持人 A</button>
+          <button data-r="1" onclick="setMe(1)">主持人 B</button>
+        </span>
+      </span>
+      <span class="sync" id="sync">連線中…</span>
+      <span class="spacer"></span>
+      <span class="mytally" id="tally"></span>
+    </div>
+    <div class="tabs" id="tabs"></div>
+  </div>
+
+  <div id="panel"></div>
+
+  <p class="foot">
+    用法：先選「我是誰」→ 展開工具卡 → 試用後填「試用狀態／品質・易用・成本・整合 1–5★／傾向／筆記」。對方的評分會即時並排顯示。<br>
+    把這個 .html 檔傳給對方，兩人各自打開、各選自己的身分，評分即時同步。右上「● 即時同步中」代表已連上雲端。
+  </p>
+</div>
+
+<script type="application/json" id="catalog">[{"key":"cap","label":"A 錄音・轉錄","stage":"錄音捕捉與轉錄（環節 A：Capture）","picking":"在這個環節要挑的是「把兩位主持人的閒聊聲音，乾淨地錄成雙軌音檔，再轉成帶 speaker/時間碼/專有名詞正確的逐字稿」這條原料線——涵蓋(a)錄音硬體、(b)錄音軟體、(c)轉錄與字幕三層，重點是繁體中文與日本不動產專有名詞的表現，目前只蒐集所有可選項，尚未決定。","criteria":["繁中/台灣口音表現（CER 字錯率、是否輸出繁體而非簡體）","日本不動產專有名詞表現（利回り/区分所有/重要事項説明/路線価；可否自訂詞庫/initial_prompt/custom vocabulary）","雙軌/分軌能力（每人各一軌，speaker 天生確定、免 diarization）","中英日夾雜（晶晶體）處理能力","成本（硬體一次性 / 軟體訂閱 / 轉錄每分鐘）","免費額度與試用方式（方便兩人實測比品質）","有無 API／可否自動化串接（接上既有 line-inspiration-helper 與 Supabase 面板）","資料落地與隱私（音檔是否離境、可否本地/地端執行）","學習曲線與遠端/本地適用情境（同地 vs 兩地）","字幕輸出格式（SRT/VTT/逐字稿 Markdown）與後製接續性"],"options":[{"name":"動圈式麥克風（Shure SM7B / MV7+、Rode PodMic / PodMic USB、Samson Q2U、Audio-Technica ATR2100x）","type":"硬體—麥克風","desc":"動圈式對環境噪音與回音容忍度高，適合未做音響處理的房間與雙人同場；對繁中咬字無偏好，收音乾淨有助任何轉錄引擎降低字錯率。MV7+/PodMic USB/Q2U 為 USB+XLR 雙模，可先 USB 入門日後升級 XLR。SM7B 純 XLR、輸出小聲常需 Cloudlifter。與語言無關，屬實體收音層。","cost":"Q2U/ATR2100x 約 NT$2,500–3,500；PodMic 約 NT$3,500，PodMic USB 約 NT$6,000；MV7+ 約 NT$9,000；SM7B 約 NT$13,000（一次性）","trial":"硬體無試用；可至實體店試錄或先借朋友設備錄一段測試轉錄品質","api":"無（實體裝置，透過錄音軟體/介面取得訊號）"},{"name":"電容式麥克風（Audio-Technica AT2020 USB-X、Rode NT-USB+ / NT1、Blue Yeti、Elgato Wave）","type":"硬體—麥克風","desc":"電容式靈敏、細節與臨場感佳，人聲清晰度高，理論上有利轉錄辨識；但同樣會收進鍵盤、冷氣、回音等雜訊，房間需相對安靜或做吸音。USB 款（Yeti/AT2020 USB-X/NT-USB+/Wave）隨插即用適合無介面入門。與語言無關。","cost":"AT2020 USB-X 約 NT$4,500；Blue Yeti 約 NT$3,500–4,500；NT-USB+ 約 NT$6,000；NT1（XLR）約 NT$8,000（一次性）","trial":"硬體無試用；建議先在安靜房間試錄比較與動圈麥的雜訊差異","api":"無"},{"name":"領夾式/無線麥克風（DJI Mic 3 / Mic Mini、Rode Wireless Pro / Wireless Micro、Hollyland Lark Max 2、Saramonic）","type":"硬體—麥克風","desc":"領夾無線適合會出鏡或走動的拍攝情境，每人一支天生分軌，部分機型內建錄音可當備援。DJI/Hollyland 偏積極 AI 降噪、Rode/Saramonic 偏保留自然動態。AI 降噪過強有時會吃掉氣音細節，可能影響轉錄；純語音 Podcast（不出鏡）通常不需無線。與語言無關。","cost":"Wireless Micro 約 NT$5,000；DJI Mic Mini 約 NT$4,500、Mic 3 約 NT$9,000;Hollyland Lark Max 2 約 NT$9,000；Rode Wireless Pro 約 NT$13,000（一次性）","trial":"硬體無試用；可向有設備者借錄比較 AI 降噪對人聲的影響","api":"無"},{"name":"錄音介面 / 混音座（Focusrite Scarlett 2i2 4th Gen、Vocaster Two、RodeCaster Duo / Pro 2、Zoom PodTrak P4、M-Audio M-Track Duo、Mackie Onyx）","type":"硬體—錄音介面","desc":"XLR 麥克風需要介面供電與前級。雙人方案重點是「兩支麥各自分軌錄」——RodeCaster Duo / Pro 2、Zoom PodTrak P4 可每軌獨立輸出，最符合本案「兩人各一軌、speaker 天生確定」需求；Vocaster Two / Scarlett 2i2 為兩輸入入門款。Zoom PodTrak 可插 SD 卡離線錄當備援。與語言無關，是分軌的關鍵硬體。","cost":"M-Track Duo 約 NT$2,800；Scarlett 2i2 約 NT$5,500；Zoom PodTrak P4 約 NT$6,500；Vocaster Two 約 NT$8,500；RodeCaster Duo 約 NT$14,000；Pro 2 約 NT$22,000（一次性）","trial":"硬體無試用；可現場試用確認雙軌分軌錄音流程","api":"部分機型可透過 USB 多軌輸出至電腦（loopback/multitrack），無雲端 API"},{"name":"雙人錄音方案—同地單機分軌（一台電腦 + 雙麥 + 介面，OBS/Audition 多軌錄）","type":"方案—雙人錄音","desc":"兩人同空間時最簡單：兩支麥接同一介面/混音座，用 OBS 或 Audition 把每支麥錄成獨立軌。speaker 由軌別決定，完全免 diarization，正是本案 line-inspiration-helper 既有流程所需的輸入。開錄前拍手（clap）對齊拍點即可。","cost":"無額外軟體成本（OBS 免費）；硬體見上方介面/麥克風","trial":"OBS 免費可直接試；用既有設備錄一段雙軌測轉錄","api":"OBS 有 WebSocket 可程式控制；產出本地 WAV 可直接餵轉錄 API"},{"name":"雙人錄音方案—兩地遠端各錄本地軌（Riverside / Zencastr / SquadCast 的 local recording）","type":"方案—雙人錄音","desc":"兩人不同地點時，遠端平台在「每人裝置端本地錄製」再上傳，可得高品質分軌、不受網路品質影響音檔。同樣天生分軌、免 diarization。詳見下方各平台。","cost":"視平台，見下方各列","trial":"各平台多有免費方案，見下方","api":"部分平台有 API/匯出，見下方"},{"name":"Riverside","type":"軟體—遠端錄音（SaaS）","desc":"以遠端高品質錄製為主，每位參與者裝置端本地錄製、支援最高 4K 影像、分軌音檔、漸進式上傳與乾淨的來賓連結，並內建 AI 字幕與 Magic Clips。介面為主要英文，轉錄支援多語含中文（品質需兩人實測繁中）。適合兩地遠端、未來想出影音版的情境。","cost":"有免費方案；付費約 US$15–24/月起（依錄音時數與功能級距）","trial":"免費方案可直接試錄評估繁中字幕品質","api":"提供匯出分軌；有 API/整合（需確認方案層級）"},{"name":"Zencastr","type":"軟體—遠端錄音（SaaS）","desc":"以本地分軌錄音與高音質著稱，並走 all-in-one（錄音+編輯+寄存+發佈）路線。多語轉錄含中文，繁中與專有名詞表現需實測。適合想在單一平台從錄到發佈的兩地遠端團隊。","cost":"有免費方案；付費約 US$15–20/月起","trial":"免費方案可試錄","api":"提供匯出；整合視方案"},{"name":"SquadCast（現整合於 Descript）","type":"軟體—遠端錄音（SaaS）","desc":"漸進式上傳、音訊與影像分檔、雲端備份、Dolby 音訊處理。已被 Descript 收購整合，凡訂閱 Descript 即含 SquadCast，錄完可無縫進 Descript 做文字化編輯。適合想「錄音+文字化剪輯」一條龍的團隊。","cost":"含於 Descript 訂閱（Descript 付費約 US$12/月起、含 10 小時錄音）；亦有獨立 Free/Creator/Pro 級距","trial":"Descript 與 SquadCast 皆有免費方案","api":"透過 Descript 生態匯出/整合"},{"name":"Audacity","type":"軟體—本地錄音（開源免費）","desc":"老牌開源多軌錄音/編輯，免費、跨平台、可離線。能錄多軌（需介面支援多輸入）、做基本降噪與剪輯。本身不含轉錄，需把 WAV 餵給外部 STT。適合同地、預算為零、想完全掌控本地檔案者。與語言無關。","cost":"完全免費（開源）","trial":"直接下載即用","api":"無雲端 API；可用 Python 批次處理其輸出 WAV"},{"name":"OBS Studio","type":"軟體—本地錄音（開源免費）","desc":"開源直播/錄影軟體，可同時分軌錄多支麥（每軌獨立音軌）並錄製畫面，免費離線。最契合本案「兩人各一軌、speaker 天生確定」的輸入；未來要做影音版亦可沿用。本身不含轉錄。與語言無關。","cost":"完全免費（開源）","trial":"直接下載即用","api":"obs-websocket 可程式化控制錄製"},{"name":"Adobe Audition","type":"軟體—本地錄音/後製（訂閱）","desc":"專業多軌錄音與修復工具，最多 32 軌同步輸入、頻譜分析、進階降噪修復，與 Premiere Pro 互通。2026 仍在售（含於 Creative Cloud）。適合對音質修復要求高、願付訂閱者。本身不含中文轉錄（轉錄走 Premiere/外部）。與語言無關。","cost":"含於 Adobe Creative Cloud 訂閱（All Apps 約 US$69.99/月；單品方案另計）","trial":"Adobe 提供 7 天免費試用","api":"無公開錄音 API；可批次腳本（ExtendScript）"},{"name":"Descript（錄音+文字化編輯一體）","type":"軟體—錄音與編輯（SaaS）","desc":"all-in-one：含遠端錄音室（整合 SquadCast）與以「編輯逐字稿即編輯音檔」為核心的編輯器，內建轉錄、填充詞移除、Studio Sound、自動字幕。轉錄多語含中文，繁中需實測。適合想錄完直接文字化剪輯的團隊。","cost":"付費約 US$12/月起（含 10 小時錄音與全部編輯功能）；有免費方案","trial":"免費方案可試轉錄與編輯","api":"有匯出與部分 API/整合"},{"name":"既有 line-inspiration-helper 雙軌轉錄流程（複用 / 自架，OpenAI whisper-1）","type":"轉錄—既有資產（API 自架）","desc":"本專案既有資產：雙軌各自轉錄→shift offset 對齊→merge，speaker 由軌別決定（免 diarization）；專有名詞走「Whisper initial_prompt 詞庫 + A→B 文字替換」雙保險，已針對日文不動產詞（区分所有/利回り/重要事項説明/路線価）設計。底層為 OpenAI whisper-1。繁中可輸出，CER 視音質；最大優勢是幾乎零開發、已串好 /api/captions 與 SRT/VTT。","cost":"OpenAI whisper-1 約 US$0.006/分鐘（約每小時 US$0.36）；開發成本已沉沒","trial":"已可直接用既有設備錄雙軌→跑現有 pipeline 比對品質","api":"是，已有 /api/captions、SRT/VTT 輸出，最易接面板與 Supabase"},{"name":"OpenAI Whisper（開源自架：large-v3 / large-v3-turbo / faster-whisper）","type":"轉錄—開源自架","desc":"開源語音辨識，可完全本地/地端執行（資料不離境）。large-v3 中文表現佳、turbo 速度約 5×但對部分語言（如粵語/泰語）退化較大、中文退化小。可輸出繁體（需 initial_prompt 引導，否則常輸出簡體需再轉換），並用 prompt 注入專有名詞詞庫。對長靜音偶有幻覺，需調 temperature/VAD。需自備 GPU 或用 faster-whisper 在 CPU 跑。","cost":"軟體免費；成本為自架算力（本地 GPU 一次性或雲端 GPU 時數）","trial":"可在本機免費安裝測試；Hugging Face 上有 demo","api":"是，Python 套件/自建 REST；最大自由度，資料完全本地"},{"name":"OpenAI 雲端轉錄 API（whisper-1 / gpt-4o-transcribe / gpt-4o-mini-transcribe）","type":"轉錄—雲端 API","desc":"OpenAI 託管轉錄。gpt-4o-transcribe 在獨立評測整體 WER 約 8.9% 領先；whisper-1 為既有流程所用。支援中文（繁體輸出需 prompt 引導），可用 prompt 提示專有名詞。資料送 OpenAI 雲端（非地端）。串接最直接，與既有程式同源。","cost":"whisper-1 US$0.006/分鐘；gpt-4o-transcribe / mini 另有定價（依 token/時長）","trial":"有 API 額度即可小段測試；無長期免費額度","api":"是，標準 REST，最易與既有 pipeline 整合"},{"name":"Google Cloud Speech-to-Text（含 Chirp / v2）","type":"轉錄—雲端 API","desc":"Google 託管 STT，支援繁體中文（zh-TW）與多方言，準確度評價高（2026 評為約 8.8/10），支援自訂詞表（speech adaptation / custom vocabulary）強化專有名詞、可加標點與分話者。適合已在 GCP 生態、想用 zh-TW 模型者。資料送 Google 雲端。","cost":"約 US$0.004–0.006 / 15 秒級距（依模型與用量；有免費月額）","trial":"GCP 新帳號額度 + 每月免費分鐘可實測","api":"是，完整 REST/gRPC SDK"},{"name":"Microsoft Azure AI Speech","type":"轉錄—雲端 API","desc":"Azure 託管 STT，支援繁體中文（zh-TW）、即時與批次轉錄、Custom Speech 可自訂詞彙與聲學模型強化日文不動產專有名詞、內建分話者。適合已在 Azure 生態者。資料送 Azure 雲端。","cost":"與同級雲端相近，約 US$0.004–0.006 / 15 秒；有免費層","trial":"Azure 免費層每月免費小時可測","api":"是，完整 SDK"},{"name":"AssemblyAI（Universal）","type":"轉錄—雲端 API","desc":"以高準確度與內建語音理解（摘要、章節、實體偵測等）著稱，支援多語含中文、自訂詞彙提升專有名詞、自動分話者。繁中表現需實測。適合想一次拿到逐字稿+結構化分析（可直接餵下游轉化環節）者。資料送其雲端。","cost":"約 US$0.15/小時起（Universal 模型，依功能加價）","trial":"有免費額度可測","api":"是，開發者導向 REST"},{"name":"Deepgram（Nova 系列）","type":"轉錄—雲端 API","desc":"以低延遲與成本效率著稱（基礎轉錄約 US$0.0043/分鐘起），支援多語含中文、即時串流、自訂詞彙、分話者。繁中表現需實測。適合重視速度/成本、可能要即時字幕者。資料送其雲端。","cost":"約 US$0.0043/分鐘起（依模型/功能）","trial":"註冊送免費額度可測","api":"是，REST + 即時串流 SDK"},{"name":"ElevenLabs Scribe","type":"轉錄—雲端 API","desc":"ElevenLabs 的轉錄模型，主打多語即時準確度（Scribe v2 Realtime 在 FLEURS 30 語約 93.5%）。可與其語音克隆（本案 E 環節亦可能用 ElevenLabs）同生態。繁中與專有名詞表現需實測。資料送其雲端。","cost":"含於 ElevenLabs 訂閱/用量計費（依方案）","trial":"ElevenLabs 免費方案可試小段","api":"是，REST API"},{"name":"雅婷逐字稿（Yating，台灣 AILabs）","type":"轉錄—雲端 SaaS（台灣本地）","desc":"100% 台灣開發、專為台灣口音設計，支援臺灣國語、台語、粵語、日語與中英夾雜（晶晶體），可自動標點、識別發話人、機器翻譯，且強調「資料不離開台灣」。對台灣口音與在地隱私要求最對味；專有名詞詞庫能力需於後台確認。介面為繁中。","cost":"免費註冊送 300 分鐘；付費以 1/3/10 小時時數包疊加購買（可洽 sales 大量購買）","trial":"註冊即送 300 分鐘可實測台灣口音與日文詞","api":"以網頁/App 為主；API 自動化需洽官方確認"},{"name":"Good Tape（GoodTape）","type":"轉錄—雲端 SaaS","desc":"基於 Whisper 但下調 temperature 讓輸出更穩定、減少幻覺，台灣記者圈愛用（偏好非中國大陸服務）。多語含中文，繁中工作流順手。專有名詞/自訂詞彙能力需於官網確認。介面友善、適合非工程背景者上傳音檔即轉。","cost":"免費額度 + 訂閱制（依時數方案）","trial":"有免費額度可上傳實測","api":"以網頁為主；API 視方案"},{"name":"裝置端內建/離線聽寫（Apple 內建聽寫、Windows 語音輸入、行動 App 即時轉錄）","type":"轉錄—裝置端（免費/離線）","desc":"作業系統內建或手機 App 的即時聽寫，免費、可離線、隱私佳，但多為單聲道即時、無分軌、無自訂專有名詞詞庫、準確度與標點較弱。適合臨時逐字備援或會議速記，較難當作正式逐字稿原料。繁中支援度依平台。","cost":"免費（已含於裝置/OS）","trial":"裝置上直接可用","api":"多無公開批次 API"}]},{"key":"script","label":"B 腳本化 LLM","stage":"用 LLM 把逐字稿整理成對話腳本","picking":"在這個環節要挑的是「拿來把錄音逐字稿整理成可念的雙人對話腳本」的大型語言模型或寫作介面，重點看繁中口語整理品質、能否強制結構化輸出（tool calling／JSON）、成本、以及隱私（是否需自架）；以下中立窮舉，不下推薦、不排名，請你們自行試用後決定。","criteria":["繁體中文（台灣慣用語）口語整理品質","是否會出現 AI 腔／需不需要在 prompt 強制台灣用語","結構化輸出能力（tool calling / JSON Schema 強制格式）","長上下文視窗（逐字稿動輒數萬字，能否一次吃完）","成本（每百萬 token 價格 / 月費 / 是否有免費額度）","隱私（雲端 SaaS vs 自架 / 資料是否被拿去訓練）","存取方式（聊天介面 vs API 可自動化）","學習曲線（你熟 Python/GAS，可走 API；學弟可能偏好現成介面）","繁中商用授權與合規（台灣團隊 LLM 選型）","試用方式（免費方案 / 試用額度 / 本機免費跑）"],"options":[{"name":"Claude Opus 4.8（API / Claude.ai）","type":"託管 SaaS / API","desc":"Anthropic 2026/5/28 釋出的旗艦，具 adaptive thinking 與 effort 控制（low/high/xhigh/max）。多篇 2026 繁中評測指出 Claude 系列在台灣繁中寫作上語感最自然、最不易看出 AI 腔，會自動用『軟體/網路』等台灣慣用詞，適合需要細膩口語潤飾的對話腳本。原生支援 tool use（強制 JSON/工具呼叫），可走 Claude.ai 聊天介面或 API。資料預設不拿去訓練。","cost":"API 每百萬 token：輸入 $5／輸出 $25；另有 Fast Mode 約 $10/$50。Prompt caching 可省 90% 快取輸入、Batch 半價。Claude Pro 訂閱約 $17/月（含 Projects）。","trial":"Claude.ai 有免費方案可先試手感；API 走用量付費，可小額測試。","api":"有完整 API，支援 tool calling 與結構化輸出；適合你用 Python/GAS 自動化串接"},{"name":"Claude Sonnet 4.6（API / Claude.ai）","type":"託管 SaaS / API","desc":"Claude 中階平衡款，繁中語感同屬 Claude 家族（自然、台灣化用詞），品質與成本折衷，適合大量逐字稿批次整理。支援 1M token 上下文（旗艦同享），可一次吃完很長的錄音逐字稿。原生 tool use / 結構化輸出。","cost":"API 每百萬 token：輸入 $3／輸出 $15；caching 省 90%、Batch 半價。","trial":"Claude.ai 免費方案可試；API 用量付費。","api":"有 API，支援 tool calling / JSON 結構化輸出"},{"name":"Claude Haiku 4.5（API / Claude.ai）","type":"託管 SaaS / API","desc":"Claude 家族最快、最便宜的一檔，適合先做粗整理、分段、貼標籤等量大的前處理，再交給更高階模型潤飾。繁中屬 Claude 語感但細膩度低於 Opus/Sonnet。支援 tool calling。","cost":"API 每百萬 token：輸入 $1／輸出 $5；caching 省 90%、Batch 半價。","trial":"Claude.ai 免費方案；API 用量付費，單價低適合大量測試。","api":"有 API，支援 tool calling / 結構化輸出"},{"name":"OpenAI GPT-5.5（API / ChatGPT）","type":"託管 SaaS / API","desc":"OpenAI 2026 旗艦，最高品質工作取向。繁中評測指出全能但預設偶有『AI 腔』與偏簡體/大陸用語，需用 system prompt 指定『台灣繁體中文』改善。原生 Structured Outputs（JSON Schema 強制）與 function calling 成熟。可走 ChatGPT 介面或 API。\u003e272K 輸入會加價。","cost":"API 每百萬 token：輸入 $5／輸出 $30；GPT-5.5 Pro 為 $30/$180。caching 約九折、Batch/Flex 另有折扣。ChatGPT Plus 月費另計。","trial":"ChatGPT 有免費方案；API 用量付費。","api":"有 API，Structured Outputs（JSON Schema）與 function calling 完整"},{"name":"OpenAI GPT-5.4 / 5.4 mini / nano（API）","type":"託管 SaaS / API","desc":"較低成本的前沿線。GPT-5.4 為性價比主力；mini/nano 適合分類、抽取、簡單摘要、結構化輸出等量大後端任務（OpenAI 自家定位）。可作逐字稿粗整理或結構化切段，搭配高階模型潤飾。需在 prompt 指定台灣用語。","cost":"API 每百萬 token：GPT-5.4 約 $2.50/$15；GPT-5.4 nano 約 $0.20/$1.25。caching 可省約 90%。","trial":"API 用量付費，nano 單價極低適合大量測試。","api":"有 API，支援 Structured Outputs 與 function calling"},{"name":"Google Gemini 3.5 Flash（API / Gemini App）","type":"託管 SaaS / API","desc":"Google 2026 穩定 GA 款，主打高 CP 值與速度。繁中評測指出對台灣在地詞（捷運、便利商店）理解較好，但台灣化用詞細膩度被評為相對較弱，需在 prompt 明確要求台灣慣用語。支援 function calling、結構化輸出、可設定 thinking 等級與自動快取。1M token 上下文，適合超長逐字稿。","cost":"API 每百萬 token：輸入 $1.50／輸出 $9.00；快取輸入 $0.15。","trial":"Gemini App 有免費方案；Google AI Studio / API 有免費額度可試。","api":"有 API，支援 function calling 與 structured output（JSON）"},{"name":"Google Gemini 3.x Pro（API / Gemini App）","type":"託管 SaaS / API","desc":"Gemini 高階推理線，品質高於 Flash，適合需要較強理解與長文整理的腳本任務。繁中在地詞理解佳、台灣化用詞同樣建議在 prompt 指定。原生結構化輸出與 tool use。1M token 上下文。","cost":"高於 Flash（依當期 Pro 定價，輸入/輸出單價較高）；建議以 Google 官方計價頁確認當月數字。","trial":"Gemini App / AI Studio 有免費試用與額度。","api":"有 API，支援 function calling 與 structured output"},{"name":"Claude.ai Projects（現成寫作工作區，非純 API）","type":"託管 SaaS（現成介面）","desc":"把逐字稿、節目設定、用語規範當成專案知識庫，在固定 context 下反覆整理腳本，學弟不需寫程式即可用。底層即 Claude 模型，繼承其繁中語感優勢；資料預設不拿去訓練。適合非工程背景的協作者直接操作。","cost":"需 Claude Pro 訂閱約 $17/月（含 Projects、200K 上下文）。","trial":"可先用 Claude.ai 免費方案試手感，再決定是否升級 Pro。","api":"Projects 本身是介面；如需自動化仍可改走 Claude API"},{"name":"ChatGPT Projects（現成寫作工作區）","type":"託管 SaaS（現成介面）","desc":"在 ChatGPT 內建立以上傳文件（逐字稿、PDF）為基礎的知識庫並對話，回答以知識庫為準、可降低幻覺。適合不寫程式的協作者整理腳本。底層 GPT 模型，繁中需以指示指定台灣用語。","cost":"需 ChatGPT 付費方案（Plus/商用，月費另計）。","trial":"ChatGPT 免費方案可先試基本功能。","api":"Projects 為介面；自動化可改走 OpenAI API"},{"name":"Google NotebookLM（來源綁定研究/整理介面）","type":"託管 SaaS（現成介面）","desc":"Google 的來源綁定（source-grounded）研究助理，可上傳逐字稿、網頁、YouTube 影片後對話與整理，回答綁定來源、降低瞎掰；與 Google 生態整合，且你們資料本來就放 Google Drive，整合動線順。偏整理/摘要導向，腳本潤飾的文風控制不如純聊天模型細膩。","cost":"免費可用；Plus 層需 Google One AI 訂閱約 $19.99/月。","trial":"免費方案可直接試。","api":"以介面為主，無一般對外生成 API（不適合自動化串接）"},{"name":"Notion AI（文件協作平台內建 AI）","type":"託管 SaaS（現成介面）","desc":"若節目管理本來就想放 Notion，可在同一份文件內直接用 AI 整理逐字稿、生腳本，並支援多模型與可排程的 Custom Agents。繁中文風依底層模型而定，需以指示控管台灣用語。優勢是『管理＋整理』在同一處。","cost":"Notion Business 約 $20/使用者/月，含完整 AI（多模型）。","trial":"Notion 有免費方案，AI 功能多需付費層才完整。","api":"有 Notion API 可串接內容，但 AI 生成主要走介面"},{"name":"Descript（影音剪輯內建腳本/逐字稿 AI）","type":"託管 SaaS（影音工作流）","desc":"Podcast/影音導向工作流：可直接用逐字稿剪輯、寫腳本、AI 生成草稿，錄製與編輯在同一工作區。和此環節的『逐字稿→腳本』天然貼合，但屬影音平台型工具，文風與結構化控制不如純 LLM 彈性，繁中口語整理品質需實測。","cost":"依方案訂閱制（依當期方案，含轉錄時數/功能差異）。","trial":"有免費/試用方案可實測逐字稿與腳本生成。","api":"以介面為主，自動化能力有限"},{"name":"Llama 4（open-weights，自架）","type":"開源／開放權重 自架","desc":"Meta 開放權重模型，可完全在自有硬體/VPS 跑，資料不外流，無第三方資料保留疑慮（隱私最高）。可用 TOOLS 模式做 function calling。繁中為多語通用、台灣慣用語細膩度通常不及頂級閉源旗艦，需較多 prompt 工程與測試。需 GPU 與維運能力。","cost":"模型免費；成本在 GPU/VPS 與維運（自架硬體或雲 GPU 時數）。","trial":"可用 Ollama/LM Studio 在本機免費下載試跑。","api":"可自架成 REST API（Ollama / vLLM），支援結構化輸出與工具呼叫"},{"name":"Qwen 3.x（open-weights，自架，中文強)","type":"開源／開放權重 自架","desc":"阿里 Qwen 系列，2026 多份榜單列為開源中文語言應用的領先者之一（中文表現佳，惟多偏簡中語感，台灣繁中用語仍建議 prompt 明確指定並實測）。有可在單張消費級 GPU 跑的版本（如 Qwen3.6-35B-A3B 級距），自架門檻相對低。支援 TOOLS 模式 function calling。資料可完全留在內網。","cost":"模型免費；成本在 GPU/VPS 與維運；部分版本單卡可跑，硬體門檻較低。","trial":"Ollama/LM Studio 可本機免費下載試跑。","api":"可自架成 REST API（Ollama / vLLM），支援結構化輸出（JSON Schema）與工具呼叫"},{"name":"DeepSeek V4（open-weights，自架/雲，中文強）","type":"開源／開放權重 自架或雲 API","desc":"2026 多榜單在中文與原始 benchmark 表現領先的開放權重模型之一（中文榜居前）。完整自架需多張 H100（約 1T 參數，門檻高）；亦有官方/第三方雲 API 可低成本使用。中文偏簡中語感，台灣繁中需 prompt 指定並實測。適合想要低單價又要中文強、但可接受非台灣供應商的情境。","cost":"開放權重免費；自架需高階多卡 GPU（門檻高）。雲 API 單價在市場上偏低（含低價 Flash 版本）。","trial":"可透過雲 API 小額試用，或在足夠硬體上自架。","api":"有雲 API；自架亦可走 OpenAI 相容 / Ollama 介面，支援工具呼叫"},{"name":"Ollama（本機/自架部署框架，搭配開源模型）","type":"開源 自架（部署框架）","desc":"開發者取向的本機/自架 LLM 執行框架（CLI + REST API + Docker），資料完全不離開內網，隱私最高、無 ToS/資料保留疑慮。0.5 版起支援以 JSON Schema 強制結構化輸出；部分模型（llama3.x/4、qwen2.5 等）可走 TOOLS 模式做 function calling。本身不是模型，需搭配 Llama/Qwen/DeepSeek 等使用；適合你用 Python/GAS 串 API 自動化。","cost":"軟體免費；成本在自有 GPU/VPS 與維運。","trial":"免費下載本機即可試跑（需一張堪用 GPU）。","api":"內建 REST API，支援結構化輸出（JSON Schema）；function calling 視模型而定"},{"name":"LM Studio（本機 GUI，搭配開源模型）","type":"開源/免費 自架（GUI 介面）","desc":"提供圖形化介面與內建聊天，較適合非工程背景的協作者（學弟）在自己電腦上跑本機模型、資料不外流。2025 底起加入 JSON Schema 結構化輸出與 function calling，補上企業常用功能。同樣需搭配 Llama/Qwen 等開源模型；繁中台灣化需實測與 prompt 工程。","cost":"軟體免費；成本在自有電腦/GPU。","trial":"免費下載本機試跑，GUI 上手較快。","api":"可開本機 OpenAI 相容 API；支援結構化輸出與 function calling"}]},{"key":"voice","label":"C 語音克隆 / TTS","stage":"克隆兩人聲音做對話式 TTS（語音克隆與雙人對話合成）","picking":"挑「把你和學弟兩人聲音克隆出來、再用文字稿生成自然雙人對話」的語音引擎；重點看繁中自然度、雙人對話/情緒表現、可否自訂克隆、能否輸出時間碼（給影片對嘴/字幕用）、成本與商用/克隆授權條件。","criteria":["繁中（台灣/普通話）自然度與發音正確率","雙人對話/情緒表現（turn-taking、語氣、可否一鍵生成多人對話）","可否克隆自訂兩人聲音（最短素材長度、即時 vs 專業克隆）","時間碼/對齊輸出（字元/字級 timestamps，給字幕與影片對嘴）","成本（月費 / 每百萬字元 / 克隆音色費）","商用授權與克隆同意門檻（能否商用、是否需本人同意驗證）","試用方式（免費額度、是否免信用卡、可否先試聽再決定）","部署型態（託管 SaaS / 純 API / 開源自架，是否需 GPU）","延遲與即時性（是否支援串流/即時，podcast 多為非即時）"],"options":[{"name":"ElevenLabs（含 Eleven v3 + Text to Dialogue 對話模式）","type":"託管 SaaS + API","desc":"業界最常被點名的語音克隆/TTS。提供 Instant Voice Cloning（約 1 分鐘素材）與 Professional Voice Cloning（30 分鐘以上高品質素材、需本人錄音同意驗證）。Eleven v3（2026/3 起正式版、非 alpha）有 Dialogue mode／Text to Dialogue：直接吃帶「說話者標籤」的對話腳本，一次產生多人輪流對話、會處理 turn-taking、插話、語氣轉換；用方括號 audio tags（自然語言指令，如 [laughs]、[whispers]）控制情緒。支援含 Mandarin 在內多語，可讓克隆音色講中文。對話式 podcast 場景的成熟度高，但繁中（尤其台灣腔）自然度仍需兩人實測。","cost":"訂閱制 + credits：Starter $5/月（含商用授權、即時克隆）、Creator 約 $11/月（pro 級克隆、192kbps）、Pro $99/月（含 44.1kHz PCM、適合量產對話）、Scale $330/月、Business $1,320/月。Eleven v3 也可透過第三方（如 kie.ai、WaveSpeedAI）按量呼叫。","trial":"有免費方案可先試聽音色；付費方案首月常有折扣。建議用免費/Starter 先丟一段中日不動產對話腳本實測 Dialogue mode。","api":"有完整 API；提供 Text to Speech / Text to Dialogue 的 with-timestamps 端點，回傳字元級＋字級 timestamps 與 alignment 物件，可自動生成字幕時間碼、做影片對嘴與卡拉OK式逐字高亮。另有 Forced Alignment 能力。"},{"name":"Fish Audio","type":"託管 SaaS + API","desc":"主打亞洲語言，多篇 2026 比較文指出其中文/日文/韓文表現是強項，中英日韓混排（腳本夾英文專有名詞）處理佳——對「日本不動產」常出現日文地名/術語的情境有參考價值。克隆門檻低，約 15 秒素材即可生成高保真音色。對話需自行把兩個 voice_id 分段合成再串接（非一鍵多人對話）。繁中自然度與情緒需實測。","cost":"消費級 Plus 約 $5.5/月、Pro 約 $37.5/月（年付）。API 走 pay-as-you-go 無最低消費；克隆音色（部分經 Novita AI）約 $0.1/音色。","trial":"有免費層可先試；官方 Python SDK（含 async）方便接自動化。","api":"有 RESTful API + 官方 Python SDK，三步驟克隆（upload → clone → get voice_id）。時間碼/字級對齊輸出需查最新 API 文件確認，未在本次來源明確列出。"},{"name":"MiniMax（海螺 / Speech 系列，含 Speech 2.5/2.6 HD/Turbo + Voice Clone）","type":"託管 SaaS + API","desc":"中國團隊，官方宣稱中文為「全球最強」、2.5 Turbo 起涵蓋約 40 語言。Voice Clone 把短參考片段轉成可重複使用的 voice ID，保留音色、口音、風格，再用 Speech 2.6 HD/Turbo 合成。繁中自然度普遍評價高，情緒/語速/音量/音高可調。對話同樣是分段合成兩個 voice ID 再串。可透過官方平台或 fal.ai、WaveSpeedAI、Replicate 等第三方呼叫。","cost":"Speech-02 HD 約 $0.05/1K 字元、2.5 Turbo 約 $0.04/1K 字元；Voice Clone 部分平台約 $0.50/次起。實際以官方平台與各代理商報價為準。","trial":"官方平台與多家第三方（fal.ai、Replicate 等）可申請 API key 小量試打。","api":"有 REST API（多為提交 prediction ID 後輪詢取結果）。字級時間碼輸出需查官方 API 文件，本次來源未明確列出。"},{"name":"火山引擎 / 豆包語音（位元組跳動 Volcengine）","type":"託管 SaaS + API","desc":"位元組的語音大模型，繁/簡中與多場景配音為強項。聲音復刻支援「極速復刻」5–10 秒本人錄音即生成專屬音色，宣稱 128 維聲紋特徵＋韻律建模、串流延遲可壓到 300ms 內。情緒採指令式：文案中用方括號描述（如 [急切而發顫]）即可生成對應情緒。適合中文短影音劇情/播報配音。需中國雲帳號，海外/台灣使用者要留意實名與帳務、跨境合規。","cost":"音色按年付，一個復刻音色約 150 元人民幣/年，另每月約 1 元存儲費；合成按字元計（公版音色走語音合成大模型計費、復刻音色走聲音復刻大模型計費）。","trial":"火山引擎平台有免費額度可申請試用，需註冊帳號。","api":"有完整 RESTful + WebSocket 串流 API，多語言 SDK（Python/Java/Go）。可與其 RTC/ASR/大模型整合。時間碼輸出細節需查官方 API 文件。"},{"name":"PlayHT / PlayAI（含 PlayDialog 多人對話模型）","type":"託管 SaaS + API","desc":"面向開發者與工作室的量產語音平台，900+ 音色、142 語言。PlayDialog 專為多說話者對話設計，支援 10 秒內素材即時克隆，官方定位即「podcast、廣播劇、需要多人對話的互動語音」。Turbo 延遲可達 sub-300ms。繁中自然度與台灣腔需實測；對話腳本工作流相對完整。","cost":"按量：PlayHT 2.0 Turbo $15/百萬字元、2.0/3.0 $30/百萬字元、PlayDialog $100/百萬字元；訂閱 Creator $39/月（50 萬字元）到 Scale $999/月（3300 萬字元）。","trial":"有訂閱與按量試用入口，可先用小量字元測 PlayDialog 對話效果。","api":"有 production 級 API，支援多說話者對話輸出。字級時間碼/對齊輸出需查官方 API 文件確認。"},{"name":"OpenAI TTS（gpt-4o-mini-tts / tts-1 / tts-1-hd）","type":"API","desc":"OpenAI 的 TTS，gpt-4o-mini-tts 共 13 種預設音色（新增 Ballad/Verse/Marin/Cedar 等），可用自然語言指令（instructions）控制語氣/情緒/風格。2025/12 版字錯率明顯下降。重要差異：以「預設音色＋風格指令」為主，並非把你們兩人聲音做任意克隆——不是傳統 voice cloning 工具；自訂音色（Custom Voices）有資格與建立流程限制。沒有原生「一鍵雙人對話」，要自己分段用不同音色合成。繁中可用但音色固定，無法變成你和學弟本人的聲線。","cost":"gpt-4o-mini-tts 約 $0.60/百萬輸入 token + $12/百萬音訊輸出 token，約 $0.015/分鐘（≈ $15/百萬字元）。","trial":"需 OpenAI API key，按量計費；可小額試打。","api":"有 API；可請求帶 timestamps 的輸出做字幕對齊（依模型/端點而定）。"},{"name":"Azure AI Speech – Custom Neural Voice（Professional / Lite）","type":"託管雲平台 + API","desc":"微軟企業級方案。Custom Neural Voice Professional 可上傳專業錄音棚素材訓練高品質專屬音色（適合長期穩定的兩人節目品牌音色），CNV Lite 為 demo/評估用 preview。中文（含普通話）官方音色庫成熟。重點：Professional 克隆有嚴格的本人同意與責任 AI 審核流程（access 需申請），門檻較高但合規清楚，適合長期商用。計費拆成訓練/託管/合成三段，端點開著就持續算託管費。","cost":"Custom Professional 合成約 $24/百萬字元（HD 約 $48）；訓練約 $52/compute hour；託管約 $4.04/模型/小時。另有免費額度。","trial":"Azure 有免費層與額度；Professional 克隆需先通過存取申請與同意流程。","api":"有完整 REST/SDK；支援 SSML 精細控制與 word boundary 時間戳（可做字幕對齊）。"},{"name":"Google Cloud Text-to-Speech（Chirp 3 HD + Instant Custom Voice）","type":"託管雲平台 + API","desc":"Google 雲 TTS。Chirp 3 HD 主打約 30 種情緒風格、自然語調；Instant Custom Voice 可用約 10 秒素材克隆品牌音色。中文支援完整、雲端基礎設施穩。對話需自行用兩個音色分段合成串接（非原生多人對話腳本）。Instant Custom Voice 同樣有使用條款與本人授權要求，適合做你們兩人的品牌音色。","cost":"Chirp 3 HD 約 $30/百萬字元；Instant Custom Voice 約 $60/百萬字元；整體 free–$160/百萬字元區間，Chirp 3 有每月 0–100 萬字元免費額度。","trial":"有每月免費字元額度可先試，需 GCP 帳號。","api":"有完整 API/SDK；支援 SSML 與 timepoint 標記（\u003cmark\u003e）取得時間碼做對齊。"},{"name":"阿里通義 Qwen-TTS / CosyVoice（雲端百鍊版 + 聲音複刻）","type":"託管雲平台 + API（亦有開源版，見下）","desc":"阿里雲百鍊上的 Qwen-TTS 與 CosyVoice 系列，含 Qwen3-TTS-VC（聲音複刻）/VD（聲音設計）兩種自訂模式，支援串流輸入/輸出低延遲。中文（含方言/聲調）為重點優化項。聲音複刻按字元計費、克隆音色的合法授權由使用者負責（需讀服務協議）。建議用 10 平方米內安靜環境、降噪麥克風錄製參考音以提升品質。海外使用需阿里雲國際站帳號。","cost":"聲音複刻與合成按文字字元數計費（依百鍊定價，分公版/複刻不同單價，以官方價格頁為準）。","trial":"百鍊平台有免費額度/試用，需註冊阿里雲帳號。","api":"有 REST API（含 Qwen-TTS-Realtime 串流）與 SDK。時間碼輸出細節需查官方 API 參考。"},{"name":"GPT-SoVITS（開源自架）","type":"開源自架","desc":"社群最熱門的少樣本中文克隆框架之一，MIT 授權。1 分鐘素材可微調、5 秒可做 zero-shot；中文表現極佳，支援中英日韓粵跨語。2026 已到 v4（修正 v3 金屬感、原生 48kHz 輸出），另有 v2Pro/v2ProPlus 以 v2 的硬體成本達 v4 級品質。完全本地、零雲端費用、資料不外流，最大彈性；但要自備 GPU、自行做工程整合，對話需自己排兩人音色分段。情緒/時間碼需靠額外工具或 forced alignment（如 whisper/montreal aligner）自行產生。","cost":"軟體免費（MIT）；成本是自備 GPU 硬體 + 電力 + 工程時間。商用一般可（MIT），但須留意所用預訓練模型/底模的個別授權。","trial":"可在本機或租用 GPU（Colab/雲 GPU）直接跑 WebUI 試。","api":"可自建 HTTP API（社群有現成 api 腳本）；時間碼需外掛 forced alignment 自行產生。"},{"name":"CosyVoice 2 / 3（開源自架，阿里 FunAudioLLM）","type":"開源自架","desc":"Apache 2.0 授權（商用友善）。zero-shot 克隆（約 5 秒）、跨語、細粒度情緒控制，2.0（2024/12）發音錯誤率降 30–50%、串流延遲約 150ms。中文（聲調、部分方言）為重點。另有多說話者對話延續模型，可生成最多 5 人、約 60 分鐘的 podcast 式連續對話——對「雙人對話式 podcast」是少數開源端就有對話導向能力的選項。需自備 GPU 與工程整合。","cost":"軟體免費（Apache 2.0，商用友善）；成本是 GPU 硬體 + 工程時間。亦可用阿里雲百鍊託管版（按量付費，見上）。","trial":"可本機/雲 GPU 自架試，或先用阿里雲百鍊託管版試聽。","api":"可自建 API；阿里雲託管版有官方串流 TTS API。時間碼需自行/外掛產生。"},{"name":"IndexTTS2（開源自架，B 站 index-tts 團隊）","type":"開源自架","desc":"2026 多份開源 voice cloning 榜單前段。自回歸 zero-shot，特色是「情緒」與「語音時長」可獨立於音色精準控制——對影片配音（要把語音長度卡進畫面秒數）特別有用，且情緒與音色解耦。論文宣稱在 MaskGCT、F5-TTS、CosyVoice2、SparkTTS 等基準上達 SOTA。中文表現佳。需自備 GPU 與整合。","cost":"開源免費（須確認 repo 授權條款細節再商用）；成本為 GPU + 工程時間。","trial":"可在本機/雲 GPU 跑官方 repo 試；HuggingFace 有 demo 可先聽效果。","api":"自建 API；精準 duration 控制有利對嘴，時間碼可由其時長控制 + 外掛對齊產生。"},{"name":"其他開源自架（Spark-TTS、MaskGCT、F5-TTS、GLM-TTS 等）","type":"開源自架","desc":"供窮舉與比較基準參考：Spark-TTS（LLM-based、單流解耦 speech token，效率高）、MaskGCT（非自回歸 masked generative，含 duration control、高保真）、F5-TTS（常作 zero-shot 克隆基準）、GLM-TTS（2025/12 技術報告）等，均為近年中文/多語 zero-shot 克隆研究級模型，常被拿來和 IndexTTS2/CosyVoice2 對比。各模型中文自然度、情緒、對話能力差異大，授權條款逐一不同，商用前須個別確認 license。","cost":"多為開源免費；成本為 GPU 硬體 + 工程整合 + 逐一確認授權。","trial":"多數在 GitHub/HuggingFace 有 demo 或可自架試聽。","api":"皆需自建 API；時間碼/對話編排需自行工程化。"}]},{"key":"visual","label":"D 視覺生成","stage":"環節 D：不出鏡的視覺（Visual Generation / No-Face-On-Camera）","picking":"在「兩位主持人不出鏡」的前提下，挑選用來製作畫面的工具組合——把口播內容變成可看的影片畫面（動態圖文模板＋AI 配圖＋虛擬主播＋數據圖表/地圖/圖庫），先把所有可選工具中立列出，讓兩人試用後自行決定每一類要用哪一個。","criteria":["中文/繁中圖內文字（生成圖片時中文字是否會亂碼、排版正確度）","成本（免費額度、月費、單張/每秒計價）","API／可否自動化串接（能否程式化批次生成、串進工作流）","商用授權（產出是否可商用、是否有法律保障/indemnity、訓練資料來源）","中文介面與中文語音/字幕支援（虛擬主播類）","學習曲線（會 Python/GAS 但前端偏好 TS，工程化 vs 拖拉式）","輸出品質與解析度（4K、解析度上限、浮水印）","克隆/自訂程度（自訂角色、品牌色、模板可改度）","與日本不動產主題的適配（地圖、地價、統計數據可視化）","試用方式（免費試做、免註冊、watermark 限制）"],"options":[{"name":"Remotion","type":"開源框架（程式化影片，React/TypeScript）","desc":"用 React 元件寫影片、渲染成 MP4/WebM，支援伺服器端渲染、Player 元件、GitHub Actions 批次渲染。極適合資料驅動、模板化、可程式化重複生成的節目片頭/下框字/動態圖卡。中文字由你自己用 Web 字型控制，文字正確度 100%（非 AI 生成、不會亂碼），但需自備中文字型檔。符合使用者 TS+Tailwind 偏好、可工程化。","cost":"開源；個人與年營收\u003c100萬美金公司免費。公司授權：100萬–1000萬 ARR 每月 US$50、以上 US$200；Company License 最低每月 US$100（含 4 個開發者席次，每席 US$25）。","trial":"npm 安裝免費試做，本機即可渲染，無 watermark","api":"是。完整程式化渲染 API、可 CI/CD 自動化、可雲端（Lambda）渲染"},{"name":"Revideo","type":"開源框架（Motion Canvas 分支，TypeScript）","desc":"Motion Canvas 的分支，加上渲染 API、伺服器端渲染與模板系統，主打自動化影片產線。適合做可重複套用的數據動畫/解說動畫，中文字由開發者自控、不會亂碼。MIT 授權、完全免費，工程化程度高。","cost":"MIT 授權，永久免費（自架渲染需自負伺服器成本）","trial":"開源直接 clone 試用，無 watermark","api":"是。內建渲染 API、模板系統，專為自動化產線設計"},{"name":"Motion Canvas","type":"開源框架（程式碼驅動動畫，TypeScript）","desc":"以 TypeScript generator function 寫動畫、補間、場景圖，附即時編輯器，專為解說型動畫與可視化設計。中文字以程式/字型控制、不會亂碼。本身偏向手工打造單支動畫，自動化批次需搭配 Revideo。","cost":"MIT 授權，永久免費","trial":"開源 clone、本機即時編輯器試用","api":"部分。核心為函式庫；伺服器端批次渲染建議改用 Revideo"},{"name":"Adobe After Effects","type":"商用桌面軟體（動態圖形業界標準）","desc":"業界標準動態圖形/視覺特效軟體，模板（含 Motion Bravo 等市集）、外掛生態最完整，可做高質感片頭、下框字、轉場。中文字由你輸入、需安裝中文字型，文字正確度 100%。學習曲線陡，非程式化（可用 expressions/腳本），不適合純自動化批次。","cost":"訂閱制，單體約每月 US$22.99 起（地區/方案而異），含 Creative Cloud 整合","trial":"7 天免費試用","api":"有限。可用 ExtendScript/腳本與 Adobe 自動化，但非雲端 REST API"},{"name":"Canva（含影片/Magic 動畫）","type":"託管 SaaS（拖拉式設計＋影片模板）","desc":"拖拉式、模板與素材庫龐大，含品牌工具（Brand Kit）、Magic Animate、Beat Sync、影片背景去除、自動字幕。中文字直接輸入、正確顯示，繁中介面完整。最低學習曲線，適合非工程化快速產出，協作與手機 App 友善。","cost":"免費方案（5GB 雲端）；Pro 約每月 US$15／年付更低（地區而異），含品牌工具與進階 AI","trial":"免費方案可長期試用","api":"是。Canva Connect API（設計自動化），另有 Apps SDK"},{"name":"CapCut","type":"託管 SaaS／桌面＋App（影片剪輯＋模板）","desc":"短影音剪輯與動態圖形模板庫大，內建自動字幕、文字轉語音、Beat Sync，手機與桌面皆有。中文字直接輸入顯示正常。模板套用快、適合 Reels/Shorts 風格。注意商用授權與素材授權條款需逐項確認（部分音樂/素材有限制）。","cost":"免費版（部分功能/匯出限制）；Pro 訂閱制（地區而異，約每月 US$10 上下）","trial":"免費版可直接用","api":"有限。以 App/桌面操作為主，無完整公開影片生成 REST API"},{"name":"Midjourney","type":"AI 配圖（託管，訂閱制）","desc":"美感與構圖強，藝術風格與氛圍圖（如日本街景、不動產情境氛圍）表現佳。中文字在圖內生成易亂碼，不適合做含中文字的圖卡。截至 2026 年 4 月 API 仍為限量釋出且商用條款較嚴，正式產線串接受限。","cost":"訂閱制（約每月 US$10 Basic 起至 US$60+），按方案給 GPU 時數","trial":"無長期免費；需訂閱（偶有限時試用）","api":"受限。API 限量釋出、商用條款較緊，不建議做自動化產線"},{"name":"Google Nano Banana / Nano Banana Pro / Nano Banana 2（Gemini Image）","type":"AI 配圖（API＋App）","desc":"Gemini 系列圖像模型。Nano Banana 2（Gemini 3.1 Flash Image）大幅改善中文渲染、幾乎消除亂碼；Nano Banana Pro（Gemini 3 Pro Image）文字渲染準確率約 94%、支援 4K。對「圖內含中文字的資訊圖卡」是目前較可用的一類，且有正式 API。","cost":"Nano Banana（2.5 Flash Image）約 US$0.039/張；Pro 約 US$0.134/張（1K–2K）、US$0.24/張（4K）；Nano Banana 2 約 US$0.045–0.151/張（依解析度）；Batch API 再 5 折。第三方代理（如 laozhang.ai）可壓到約 US$0.05/張統一價","trial":"Gemini 有免費額度層（Free Tier 有每日限額）","api":"是。官方 Google/Gemini API，可批次、可自動化"},{"name":"FLUX（含 1.2 Pro）","type":"AI 配圖（開源權重＋託管 API）","desc":"Black Forest Labs 系列，畫質高、可自架或經 fal/Replicate 等託管。一般英文文字尚可，中文字在圖內仍非強項（建議搭配後製或改用 Seedream/Nano Banana Pro 處理中文字）。可商用、彈性高。","cost":"託管 API 約 US$0.02–0.10/張（FLUX 1.2 Pro）；經聚合平台（fal/Replicate）可更低約 US$0.008–0.04/張；自架需自負算力","trial":"多數託管平台給少量免費額度","api":"是。fal、Replicate、Together、Fireworks 等皆提供 API"},{"name":"OpenAI DALL·E / GPT Image","type":"AI 配圖（API）","desc":"OpenAI 圖像模型，整合於 ChatGPT 與 API。一般圖像與英文文字表現穩定，中文字在圖內準確度普通（不如 Seedream/Nano Banana Pro）。有正式 API、SLA 與可預期單張成本，適合工程化串接。","cost":"premium 層約 US$0.03–0.20/張（依模型/解析度）","trial":"ChatGPT 內可試用；API 需付費（新帳號偶有額度）","api":"是。OpenAI Images API，完整、可自動化"},{"name":"Ideogram（v3/4.0）","type":"AI 配圖（App＋API，主打圖內文字）","desc":"自 V1 起即為「圖內文字」首選，排版海報、標題字、英文 typography 可靠。中文字渲染不是其強項（以英文為主）。適合做英文標語/品牌字、節目封面英文標題。","cost":"提供每日 10 張慢速免費圖且含商用權利；付費訂閱解鎖更多額度/速度","trial":"每日 10 張免費（含商用權）","api":"是。Ideogram API；亦可經 Recraft Studio 等整合使用"},{"name":"Adobe Firefly","type":"AI 配圖（API＋Creative Cloud 整合）","desc":"唯一宣稱僅以授權影像訓練、提供廠商法律 indemnity（商用最安全的一類）。整合於 Photoshop/Illustrator/Premiere。中文字在圖內非主打，建議文字另以設計軟體疊上。對在意版權風險的商用節目特別相關。","cost":"Firefly 方案約每月 US$9.99 起；亦含於 Creative Cloud 訂閱","trial":"有免費額度（每月生成點數）","api":"是。Firefly Services API（企業/開發者）"},{"name":"Seedream（v5）","type":"AI 配圖（API／平台，主打中英雙語文字）","desc":"原生中英雙語圖像模型，公開評測中中英文文字渲染綜合分數領先，中文字在圖內準確度與排版為目前最強之一；v5 商品級材質擬真。最適合做「含繁中文字的資訊圖卡、封面、海報」。可經 fal/火山等平台呼叫。","cost":"依平台計價（聚合平台多落在每張數美分等級，依解析度而定）","trial":"多數託管平台提供少量免費試用額度","api":"是。經 fal、火山引擎（Volcano）等平台提供 API"},{"name":"Recraft（V3）","type":"AI 配圖（平台，整合多模型＋向量）","desc":"設計導向平台，整合 FLUX/Ideogram/Google/OpenAI/Seedream 等多模型比較，並可輸出向量/品牌風格一致圖組。可在同一介面切換不同模型處理中文字（轉用 Seedream）或英文字（轉用 Ideogram）。適合需要品牌一致性的圖庫化產出。","cost":"免費額度＋訂閱方案（依生成量計）","trial":"有免費額度","api":"是。Recraft API，可程式化生成與向量輸出"},{"name":"HeyGen","type":"虛擬主播（託管 SaaS＋API）","desc":"AI 虛擬主播主流方案，可自訂角色（克隆本人形象/聲音）、175+ 語言翻譯、4K（Business 起）。支援中文語音與字幕。最適合「想要有一個固定虛擬主持人露臉但不用真人出鏡」。Avatar API 計價透明。","cost":"免費（每月 3 支、含浮水印）；Creator US$29/月（無限支＋200 點）；Pro US$99/月；Business US$149/月＋US$20/席。API 方案 Pro US$99/月、Scale US$330/月；Avatar V API 約 US$0.05/秒（≈US$3/分鐘）","trial":"免費方案每月 3 支（含浮水印）","api":"是。Avatar API，可程式化生成、可串工作流"},{"name":"Synthesia","type":"虛擬主播（託管 SaaS，企業導向）","desc":"企業可信度高（財星 100 大半數使用）、avatar 庫最大、語言支援 130–140+。中文語音/字幕支援良好、嘴型一致性佳。偏企業訓練影片風格，完整翻譯功能與部分自訂留給較高方案。","cost":"Starter 約 US$18–29/月（年付，首批自訂 avatar）起，至企業客製","trial":"有免費試用（可生成示範影片）","api":"是。Synthesia API（較完整功能偏較高方案）"},{"name":"D-ID","type":"虛擬主播（API 優先，即時串流）","desc":"開發者優先、入門價低，支援即時串流 avatar，適合對話式 AI 代理人/即時互動。可由一張照片生成會說話的影片。中文語音可用。適合工程化、想做即時或低成本照片轉影片。","cost":"Lite 約 US$5.90/月起；按用量/分鐘計","trial":"有免費試用額度","api":"是。Developer-first API，含即時串流"},{"name":"Colossyan","type":"虛擬主播（託管 SaaS）","desc":"提供可用的免費層（200+ avatar），適合零成本起步試做虛擬主播。偏教育訓練/解說風格。中文語音支援需逐項確認。","cost":"免費層可用；Basic 約 US$19/月起","trial":"免費層（含 avatar）","api":"是（較高方案/企業）"},{"name":"VEED（含 Fabric 1.0 avatar API）","type":"虛擬主播＋線上剪輯（SaaS＋API）","desc":"線上影片編輯＋AI avatar，Fabric 1.0 為 2026 最具成本效益的 avatar API 之一。含自動字幕、翻譯。適合一站式剪輯＋虛擬主播且預算敏感者。","cost":"Basic 約 US$12/月（年付）起；Fabric 1.0 API 約 US$0.08/秒（480p）","trial":"免費方案可試用","api":"是。Fabric 1.0 Avatar API"},{"name":"其他虛擬主播替代（Creatify／Elai.io／Fliki／DeepBrain AI／ClipLoft 等）","type":"虛擬主播（多家託管 SaaS）","desc":"2026 市場上的同類替代：Elai.io（Basic 約 US$23/月）、Fliki（Standard 約 US$21/月年付，含 TTS＋avatar）、DeepBrain AI（Personal 約 US$24/月）、ClipLoft（Starter 約 US$49/月）、Creatify（廣告短影音導向）。功能與中文支援各異，建議併入確認表逐一試做比較。","cost":"多落在每月 US$19–49 區間（依方案）","trial":"多數有免費試用或免費層","api":"部分提供 API（依平台與方案）"},{"name":"Flourish","type":"數據圖表（託管 SaaS，互動可視化）","desc":"互動式資料故事工具，50+ 模板、scrollytelling、可連 Google Sheets 即時資料、泡泡圖/時間軸等創意圖型（適合呈現日本地價趨勢、人口、利率變化）。中文標籤直接輸入正常。免費層即可用全部視覺類型。可嵌入網頁/PWA。","cost":"免費方案（含全部視覺類型、無限專案，含 Flourish 品牌標示）；付費移除標示／進階","trial":"免費方案長期可用","api":"有限。以嵌入（embed）與 Live data 連結為主；進階 API 視方案"},{"name":"Datawrapper","type":"數據圖表＋地圖（託管 SaaS）","desc":"快速產出圖表、地圖（含 choropleth 分區著色，適合日本都道府縣地價/空屋率地圖）、表格，全部 RWD 手機自適應。中文標籤正常顯示。免費層無限圖表（含 Datawrapper 標示）。嵌入方便、適合節目資訊圖。","cost":"免費（無限圖表、含品牌標示）；Team 約 US$599/年起移除標示＋協作；企業客製","trial":"免費方案可長期使用","api":"是。Datawrapper API（自動化建立/更新圖表，較高方案）"},{"name":"Google My Maps","type":"地圖（免費 SaaS）","desc":"零成本在 Google 地圖上標點、畫區、做圖層（標日本物件/車站/商圈位置），可分享與嵌入。中文標籤正常。最低學習曲線，適合主持人自行標物件位置做說明畫面。互動性與客製化有限。","cost":"免費（Google 帳號即可）","trial":"免費","api":"有限。My Maps 本身無完整 API；進階需改用 Maps JavaScript API / Maps Platform（按用量計費）"},{"name":"Mapbox / Leaflet（自訂互動地圖）","type":"地圖（API／開源函式庫）","desc":"工程化互動地圖：Leaflet（開源、免費，可載 OpenStreetMap 圖磚）或 Mapbox（高質感樣式、向量圖磚，按用量計費）。可做客製日本不動產地圖（地價熱區、物件分布）嵌入 PWA。符合 TS 偏好、可深度自訂。需自行串資料（如 e-Stat、MLIT 土地交易資料）。","cost":"Leaflet 開源免費（圖磚另計）；Mapbox 有免費額度後按用量計費","trial":"Leaflet 直接用；Mapbox 有免費額度","api":"是。Mapbox GL JS / Leaflet 皆為前端可程式化地圖庫"},{"name":"日本不動產官方/公開數據源（MLIT 土地綜合情報系統、e-Stat、地価公示、geoprice 等）","type":"資料來源（公開數據，供圖表/地圖使用）","desc":"非作圖工具，而是餵給上述圖表/地圖工具的『資料來源』：MLIT 土地綜合情報系統（不動產實際成交價，2018Q1 起）、e-Stat 國家統計、地価公示、geoprice（公示地價地圖）、Japan Real Estate Gateway（彙整 MLIT/日銀/e-Stat）。與節目主題（日本不動產）高度相關，可下載後用 Flourish/Datawrapper/Mapbox 視覺化。","cost":"多為免費公開資料（部分平台有付費進階）","trial":"公開查詢免費","api":"部分提供開放資料下載/API（如 e-Stat API、MLIT 資料下載）"},{"name":"免費圖庫／素材（Unsplash、Pexels、Pixabay、Storyset 等）","type":"圖庫／素材（免費，多數可商用）","desc":"B-roll、背景圖、情境照、插畫（Storyset 向量插畫）。Pexels/Pixabay/Unsplash 皆明文允許商用、免署名（仍建議逐案確認；部分含可辨識人物/商標的圖需注意肖像與商標權）。可補足 AI 配圖之外的真實照片與空景。","cost":"免費（多數可商用、免署名）","trial":"免費直接下載","api":"是。Unsplash API、Pexels API、Pixabay API 皆可程式化抓圖"}]},{"key":"edit","label":"E 剪輯・組裝","stage":"環節 F：組裝與後製（音檔＋字幕＋視覺 → 成片）","picking":"這個環節在挑「把已產好的 AI 語音音檔、字幕（SRT/VTT）與視覺素材（圖卡、B-roll、虛擬主持人畫面）組裝成最終影片並完成後製剪輯」的工具——重點在自動化/模板化程度、字幕對齊精準度、學習曲線、成本、與輸出多平台（YouTube 16:9、Shorts/Reels 9:16、純音檔 Podcast）的格式彈性。","criteria":["自動化/模板化程度（能否程式化批次產片、套用固定片頭片尾與字卡模板）","字幕對齊精準度（能否吃 SRT/VTT 自動對齊、是否內建語音轉字幕、word-level 逐字高亮）","中文/繁中字幕表現（轉錄正確率、繁簡、斷句標點）","學習曲線（上手難度、是否需寫程式碼）","成本（免費／訂閱／買斷／商用授權）","輸出多平台格式（16:9 / 9:16 / 1:1、4K/HDR、SRT 側錄檔 vs 燒錄、純音檔輸出）","跨平台（Windows / Mac / Linux / iPad）","共編與雲端協作（學弟可否一起改）","試用方式（免費額度／可否先測再決定）","與既有流程銜接（能否吃前環節的 AI 語音音檔與字幕檔、能否串 API 自動化）"],"options":[{"name":"Remotion（程式化 React 生成）","type":"開源框架 / 程式化（需訂閱商用授權）","desc":"用 React/TypeScript 程式碼把音檔、字幕、視覺以「組件」方式組裝成 MP4，最適合「固定模板、批次量產、自動化」——例如每集都是同一套片頭、字卡、波形動畫，只換內容。提供 @remotion/captions 套件處理字幕，並可用 @remotion/install-whisper-cpp 從音檔自動產生 word-level 逐字時間戳，做出逐字高亮的動畫字幕。可雲端大量算繪。對使用者熟 TypeScript+Tailwind 是天然契合，但需寫程式、無傳統剪輯時間軸 GUI，學習曲線偏程式向。輸出尺寸/格式（16:9、9:16）由程式碼參數控制，天生適合一鍵產出多平台版本。","cost":"個人與少於 3 人公司免費；3 人以上需授權，約 US$25/開發者/月，公司最低 US$100/月或 US$1000/年（2026 remotion.pro 報價）。","trial":"開源可直接安裝免費試做；個人/小團隊使用本身免費。","api":"本身即程式碼，可完全自動化、串 CI/雲端算繪 API（Remotion Lambda），自動化程度最高。"},{"name":"CapCut","type":"託管 SaaS（桌面/手機/網頁）","desc":"面向社群短影音的剪輯器，內建 auto-captions 自動字幕、海量模板與轉場、直接輸出 TikTok/Reels/Shorts 預設比例（9:16 等）。模板化程度高但偏「套用現成模板」而非程式化批次。2026 AI 字幕宣稱支援 20+ 語言、準確率提升。學習曲線低、適合快速上手。注意字節跳動旗下，商用與資料隱私需自行評估；部分進階字幕長度與去浮水印需付費。","cost":"免費版（1080p、auto-caption 每片 10 分鐘、標準匯出無浮水印）；Standard US$9.99/月（去浮水印、更多模板）；Pro US$19.99/月（4K/60fps/HDR、無限自動字幕）；Team US$24.99/月/人。","trial":"免費版可長期使用實測，含自動字幕（每片 10 分鐘上限）。","api":"無正式公開剪輯 API；主要為 GUI 操作，自動化能力有限。"},{"name":"Adobe Premiere Pro","type":"託管 SaaS（訂閱，Windows/Mac）","desc":"業界標準專業剪輯軟體，內建 AI Speech to Text 自動轉錄與字幕（含訂閱、不額外收費），支援 20+ 語言、乾淨音訊下準確率約 95–98%。可吃 SRT 字幕、輸出 .SRT/.XML 側錄檔或燒錄字幕，多平台格式齊全。功能最完整但學習曲線陡、成本為持續訂閱。模板化可用 Motion Graphics Template（.mogrt）與 Premiere 自帶腳本/Adobe 生態，但非純程式化批量。","cost":"單軟體：月繳 US$34.49/月；年約月繳 US$22.99/月；年繳預付約 US$21.99/月；學生/教師 US$19.99/月（2026）。","trial":"Adobe 提供 7 天免費試用（全功能）。","api":"有 ExtendScript/UXP 腳本與 Adobe 生態自動化，可做進階批次，但門檻較高。"},{"name":"DaVinci Resolve（Free / Studio）","type":"開源免費＋買斷 Studio（Win/Mac/Linux）","desc":"專業級剪輯/調色/混音一體，免費版功能已非常完整。內建 Neural Engine 自動字幕為 Studio 限定（免費版可用 AutoSubs 等免費外掛補上 AI 字幕）。可燒錄字幕或輸出獨立 .SRT/.VTT。v21（2026 已釋出公開測試）新增 AI Animated Subtitles 逐字高亮/動畫字幕。買斷一次、無月租是其特點；學習曲線中高。輸出格式與多平台支援完整。","cost":"免費版 US$0（功能足夠多數流程）；Studio 一次買斷 US$295（終身授權）。","trial":"免費版可永久使用實測；Studio 有試用版（含浮水印/限制）。","api":"提供 Python/Lua 腳本 API（Resolve Scripting），可做工程化自動化，惟需學其 API。"},{"name":"Final Cut Pro（Mac / iPad）","type":"買斷（Mac）／訂閱（iPad）","desc":"Apple 專業剪輯軟體，Mac 版一次買斷、無月租。2026 更新加入 AI「Transcribe to Captions」於裝置端自動產生字幕（離線、隱私佳），可檢視/調整/以多種格式匯出字幕、嵌入或側錄檔。輸出多平台格式齊全。學習曲線中等。限 Apple 生態（需 Mac/iPad）。新 Apple Creator Studio 訂閱含 FCP 與其他 5 款 App。","cost":"Mac 版一次買斷 US$299.99；iPad 版 US$4.99/月或 US$49/年；Apple Creator Studio 訂閱 US$12.99/月（含 Mac+iPad 多 App）。","trial":"Mac 版提供 90 天免費試用。","api":"有限；可用 FCPXML 與外部工具交換、搭配 Apple 生態自動化，但非開放剪輯 API。"},{"name":"Descript","type":"託管 SaaS（文字導向剪輯）","desc":"以「編輯逐字稿＝編輯影音」的文字導向剪輯為核心，極低學習曲線，適合 Podcast。內建轉錄、填充詞移除（um/嗯）、Studio Sound 降噪、Overdub 語音克隆（與你們前環節的語音克隆需求相關）、Eye Contact、螢幕錄製。自動字幕與逐字稿天生對齊。協作/共編佳。注意中文/繁中轉錄正確率需實測；高畫質與進階功能依方案分級。","cost":"Free（1 小時轉錄/月、5 分鐘 AI 語音、720p 匯出）；Hobbyist US$24/月（年繳約 US$16）；Creator US$35/月（年繳約 US$24）；Business US$65/月（年繳約 US$50）；Enterprise 客製。","trial":"Free 方案可長期實測核心功能（含轉錄與文字剪輯）。","api":"提供部分 API/整合（如 SDK、整合工具），自動化能力中等。"},{"name":"Kdenlive","type":"開源免費（Win/Mac/Linux）","desc":"完全開源免費的多軌剪輯器。內建語音轉文字字幕（可選 VOSK 或 OpenAI Whisper 引擎，Whisper 較慢但更準、含標點，並可用 SeamlessM4T 做翻譯/翻成英文）。可手動或自動產生字幕並燒錄/匯出。功能含字幕編輯、巢狀時間軸、proxy 代理剪輯。無授權費，跨三大平台。學習曲線中等，社群資源多但介面較傳統。","cost":"完全免費、開源、無商用授權費。","trial":"直接下載即用，全功能免費。","api":"本身為 GUI；自動化偏弱，但可搭配外部腳本與 FFmpeg 組流程。"},{"name":"FFmpeg","type":"開源免費 CLI（Win/Mac/Linux）","desc":"命令列工具，是上述許多軟體底層的引擎。最適合「純自動化/批次」：用 subtitles 濾鏡把 SRT/ASS 字幕燒錄進影片、合併音視覺、批次轉檔輸出多平台格式。可用 batch 腳本或 Python（subprocess）大量產片，並用 ffprobe 機器可讀地檢查字幕/串流。無 GUI、無時間軸、字幕對齊需由前環節（如 Whisper）先產好時間碼。對熟 Python/腳本的使用者極具威力，學習曲線在「指令熟悉度」。","cost":"完全免費、開源。","trial":"直接下載即用。","api":"本身即 CLI，最易被 Python/GAS/CI 包成自動化管線，自動化程度極高。"},{"name":"Shotcut","type":"開源免費（Win/Mac/Linux）","desc":"（窮舉補充）免費開源剪輯器，底層用 FFmpeg，支援數百種音視訊格式與編碼。多軌剪輯與字幕可用，跨三大平台。缺點是匯出預設較少，需自行清楚輸出規格。學習曲線中等，適合不想付費又要 GUI 的團隊。","cost":"完全免費、開源。","trial":"直接下載即用。","api":"GUI 為主，自動化能力有限。"},{"name":"OpenShot","type":"開源免費（Win/Mac/Linux）","desc":"（窮舉補充）入門友善的免費開源剪輯器，可加字幕、轉場、特效，並匯出至 YouTube、Vimeo 等。學習曲線低，適合新手快速組裝，但進階功能與穩定度不如 Kdenlive/Resolve。跨三大平台。","cost":"完全免費、開源。","trial":"直接下載即用。","api":"GUI 為主，自動化能力有限。"},{"name":"既有波形/音檔編輯器（如 Audacity 等）","type":"開源免費／既有工具","desc":"（對應任務中「既有波形編輯器」一項）此類工具強在音訊波形剪輯、降噪、混音與純音檔輸出，適合「Podcast 純音檔版」的後製與 RSS 發佈用 MP3。但不負責影像組裝與字幕燒錄——通常作為「組裝前的音訊清理」或「純聲音版產出」與上述影片工具搭配，而非單獨完成整個 F 環節的成片。是否沿用既有那套，建議列入確認表實測其與本環節銜接的順暢度。","cost":"視既有工具而定；Audacity 類為完全免費開源。","trial":"既有工具沿用，無額外成本。","api":"視工具而定；Audacity 可用巨集/腳本，自動化中等。"}]},{"key":"publish","label":"F・G 切片・發佈・託管","stage":"環節 G：多平台轉化與發佈（Shorts 切片 + 多平台排程 + Podcast 託管/RSS）","picking":"在挑「長音/影片做完後，怎麼自動切成短影音、排程發到各平台、並把 Podcast 託管產生 RSS 給 Apple/Spotify/YouTube」這一整套發佈管線的工具組合（三類各自獨立選，可混搭）。","criteria":["中文/繁中表現（自動字幕、AI 標題、斷句正確率）","客觀成本（月費／用量計費／自架成本）","有無公開 API／可否自動化串接（n8n、Make、Zapier、MCP）","平台涵蓋（YouTube Shorts、TikTok、IG Reels、FB、X、Threads、LinkedIn、Bluesky 等）","AI 揭露／合規支援（C2PA 內容憑證、平台 AI 標籤、EU AI Act Article 50 2026/08）","免費額度或試用方式（方便兩人實測）","可否克隆自訂／品牌套版（Brand Kit、字幕樣式、模板）","學習曲線與維運負擔（SaaS 開箱即用 vs 自架要養伺服器）","商用授權／浮水印（免費版是否有浮水印、可否商用）","團隊共編（多帳號、多人協作、審核流程）"],"options":[{"name":"Vizard","type":"託管SaaS（AI 切片）","desc":"(a)Shorts/切片類。長影片/長音自動辨識亮點切成 9:16 短片，自動字幕、AI 標題與 Hashtag，支援多語言（含中文）字幕。提供 Brand Kit、共享 workspace（Business 方案）。對日本不動產這類「知識型長談 → 切重點金句」情境合適；中文字幕需實測斷句與專有名詞（地名、建案名）辨識率。","cost":"概略：Creator 約 US$16.90/月、Business 約 US$39/月（年付約 US$19.50/月起），依方案有上傳分鐘數上限。價格會變動，以官網為準。","trial":"有免費方案（每月少量影片額度，含浮水印），可先用免費額度測中文字幕品質。","api":"有公開 REST API（可程式化上傳/取回切片），適合 Python/n8n 自動化。"},{"name":"OpusClip","type":"託管SaaS（AI 切片）","desc":"(a)Shorts/切片類。市佔高，主打「ClipAnything / 病毒分數（Virality Score）」自動挑亮點、自動重構鏡頭與字幕。支援多語言；中文需實測。免費/低階方案有浮水印與額度限制。","cost":"概略：Free（1 部影片試用）、Basic 約 US$23/月、Pro 約 US$63/月。以官網為準。","trial":"有免費試用（1 部影片），可快速看亮點偵測與中文字幕效果。","api":"有 API，但限定 Business 方案才開放（個人/低階方案無 API）。"},{"name":"Klap","type":"託管SaaS（AI 切片）","desc":"(a)Shorts/切片類。專注 YouTube 長片 → 短片，字幕品質與自動化程度評價佳，入門價偏低。支援多語言字幕；繁中表現需自行測金句斷點與專有名詞。","cost":"概略：Starter 約 US$14/月（年付）、Pro 約 US$39/月（約 3,600 上傳分鐘，約 US$0.011/分鐘）。以官網為準。","trial":"有免費/低階試用額度（多半含浮水印），可實測中文。","api":"有公開 API（可程式化切片）。"},{"name":"自建 FFmpeg + LLM（+ Whisper）切片管線","type":"開源自架（DIY 切片）","desc":"(a)Shorts/切片類。用 Whisper/faster-whisper 轉逐字稿 → 餵 LLM（OpenAI/Gemini/本地 Ollama）抓亮點時間碼 → FFmpeg 裁切 + 自動 9:16 直式裁切與燒字幕。有現成開源專案（如 SamurAIGPT/AI-Youtube-Shorts-Generator、VideoHighlighter）。完全可自訂模板、無浮水印、無每片扣點；繁中字幕可選對應模型優化。代價是要會寫程式與維運（適合使用者的 Python 背景）。","cost":"軟體免費（開源）；成本主要是運算（本地 GPU 電費，或雲端 GPU/LLM API 用量）。本地模式可近乎零邊際成本。","trial":"直接 clone GitHub 專案本地跑，無需付費即可測。","api":"本身就是程式碼，可完全自訂為自家 API/排程；可串 OpenAI、Gemini 或本地模型。"},{"name":"Postiz","type":"開源自架（多平台排程）","desc":"(b)多平台排程發佈類。AGPL-3.0 開源、可自架（Docker），號稱支援 20+ 平台（含 YouTube、TikTok、Instagram、Reddit、Discord、LinkedIn、Bluesky、Threads、Mastodon、Warpcast 等）。內建 AI 輔助、團隊協作、分析。自架即無月費；託管雲端版另有付費。適合想完全掌控資料與成本、且接受維運的團隊。","cost":"自架免費（只付伺服器/Docker 主機成本）；官方雲端託管版另有訂閱制。","trial":"可直接 self-host 免費試（Railway 等一鍵部署模板），或試用雲端版。","api":"有公開 API，並自帶 MCP server，原生支援 n8n / Make / Zapier 自動化。"},{"name":"Ayrshare","type":"API（多平台發佈，開發者導向）","desc":"(b)多平台排程發佈類。以「單一 API 端點發多平台」為核心，支援約 13–15 個平台（TikTok、YouTube、Instagram、Facebook、LinkedIn、X、Pinterest、Threads、Bluesky、Reddit、Discord、Mastodon 等），支援 TikTok 草稿、Auto Repost、RSS 自動發文等。偏「給工程師自動化用」而非漂亮後台，適合使用者用 Python 串接整條發佈流程。","cost":"概略：付費約 US$149/月起（依社群檔案數計價，檔案多時月費明顯上升，例如 50 檔約 US$770/月）。以官網為準。","trial":"有免費開發/測試額度（單一帳號層級可試 API）。","api":"核心就是 REST API（這是它的主要產品），文件完整、自動化最直接。"},{"name":"Buffer","type":"託管SaaS（多平台排程）","desc":"(b)多平台排程發佈類。老牌、UI 簡單、免費方案實用，約支援 11 個頻道（含 YouTube、TikTok、IG、FB、X、LinkedIn、Bluesky、Threads、Mastodon、Pinterest 等）。2026 提供公開 API、CLI 與 MCP server。適合想要好用後台、又保留自動化能力的團隊。","cost":"有免費方案；付費依頻道數計，入門價親民（以官網為準）。","trial":"免費方案可直接長期使用（基本排程），門檻低。","api":"有公開 API、CLI 與 MCP server，可自動化。"},{"name":"Metricool","type":"託管SaaS（排程 + 分析）","desc":"(b)多平台排程發佈類。以分析見長、免費層慷慨（含許多競品要付費的分析）。支援 IG、FB、X、TikTok、YouTube、LinkedIn、Pinterest、Threads、Bluesky、GMB 等；TikTok/YouTube Shorts 直接自動發佈偶有不穩需實測。適合同時想看成效數據的團隊。","cost":"有免費方案；付費依品牌/帳號數計（以官網為準）。","trial":"免費方案功能多，可長期試。","api":"提供 API（依方案/合作層級開放），可串接。"},{"name":"Hootsuite","type":"託管SaaS（企業級排程）","desc":"(b)多平台排程發佈類。老牌企業級工具，平台涵蓋廣、團隊權限/審核成熟，AI 輔助齊全。價格偏高、對兩人小團隊可能過重，但若未來擴編或要正式審核流程可納入評估。","cost":"偏高（企業導向，入門方案近年取消，月費較其他選項貴，以官網為準）。","trial":"通常提供有限期免費試用。","api":"有 API（企業/開發者方案層級），可自動化。"},{"name":"Publer","type":"託管SaaS（多平台排程，CP 值導向）","desc":"(b)多平台排程發佈類。對個人/小團隊很省，按社群帳號與人數彈性計價，支援主流平台（IG、FB、X、TikTok、YouTube、LinkedIn、Pinterest、Threads、Bluesky、Mastodon、GMB 等），有 AI 輔助與批次排程。適合兩人預算有限時實測。","cost":"概略：有免費方案；Professional 約 US$12/月起（3 個帳號），可加帳號/加人客製。以官網為準。","trial":"有免費方案可直接試排程。","api":"有 API（依方案開放），可自動化。"},{"name":"Spotify for Creators（原 Anchor）","type":"託管SaaS（Podcast 託管/RSS，免費）","desc":"(c)Podcast 託管/RSS 類。免費託管、產生 RSS、原生支援 Spotify 影音 Podcast 與變現（2026 起降低變現門檻）。缺點：對 Apple Podcasts 等其他目錄的一鍵分發較弱、分析與遷移彈性受限，且生態綁 Spotify。適合先零成本起步、之後再評估是否搬家。","cost":"免費託管。","trial":"完全免費可直接開節目試。","api":"無完整公開託管 API（自動化/遷移彈性較受限）。"},{"name":"Transistor","type":"託管SaaS（Podcast 託管/RSS，多節目）","desc":"(c)Podcast 託管/RSS 類。付費方案皆「無限節目 + 無限協作者」，內建節目網站、私人 Podcast、IAB 風格分析。對「未來可能開多檔節目／團隊共管」很合適。一鍵上架 Spotify、協助提交 Apple。","cost":"概略：約 US$19/月起（多節目網路託管）。以官網為準。","trial":"提供免費試用期。","api":"有完整公開 API（developers.transistor.fm）：可程式化建立節目/集數、上傳音檔（PUT）、加逐字稿、抓下載分析數據，自動化最完整。"},{"name":"Buzzsprout","type":"託管SaaS（Podcast 託管/RSS，新手友善）","desc":"(c)Podcast 託管/RSS 類。新手最友善之一，一鍵分發到 Apple、Spotify、YouTube 等所有主要目錄，付費方案無限儲存、全方案不限團隊成員。教學資源多，適合兩人快速上手把第一集發出去。","cost":"概略：有免費方案（節目 90 天後下架限制）；付費約 US$12–19/月起。以官網為準。","trial":"有免費方案可先試上架流程。","api":"有 API（可程式化管理集數/取數據）。"},{"name":"Captivate","type":"託管SaaS（Podcast 託管/RSS，成長導向）","desc":"(c)Podcast 託管/RSS 類。全方案無限節目與儲存，依「每月下載量」計價，提供 IAB 認證分析、進階聽眾數據、行銷/名單工具。一鍵上 Spotify、協助提交 Apple。適合想認真做成長與數據的團隊。","cost":"概略：約 US$17–19/月起（依月下載量分級）。以官網為準。","trial":"提供免費試用期。","api":"有 API（可自動化管理與取數據）。"},{"name":"自架 RSS（自管 Podcast Feed）","type":"開源自架（Podcast 託管/RSS DIY）","desc":"(c)Podcast 託管/RSS 類。音檔放自家物件儲存（S3/R2/B2 等）+ 自產符合規範的 RSS XML（可用靜態產生器或小腳本），手動提交 Apple/Spotify/YouTube。完全掌控、無月費上限、可任意客製；代價是要自己處理 RSS 規格、CDN、下載統計與合規欄位（適合使用者的 Python/GAS 背景）。","cost":"軟體免費；成本=物件儲存 + 流量/CDN（小流量可極低）。","trial":"可先用免費層儲存（如 Cloudflare R2 免費額度）試產 RSS。","api":"完全自訂（自己就是 API），但需自行維運與確保 RSS/各目錄規格正確。"},{"name":"AI 揭露／合規（跨選項共通注意，非單一工具）","type":"合規須知（平台政策 + 法規）","desc":"因節目用 AI 語音克隆＋AI 視覺生成，發佈時需處理 AI 揭露：YouTube 要求對「擬真的合成/改造內容」加 AI 揭露標籤（含 Shorts/直播）；TikTok 2025/01 起整合 C2PA 內容憑證並自動偵測標記 AI 內容（純 AI 寫字幕/腳本輔助多半豁免）；Meta 有獨立的深偽/操弄媒體政策；EU AI Act Article 50 自 2026/08 起，對歐盟受眾的 AI 生成內容/合成人物要求標示。注意：多數排程工具（Buffer/Metricool/Publer/Postiz/Ayrshare 等）目前並不會自動幫你打 AI 標籤，揭露多需在各平台上傳時自行設定或於內容/描述中聲明；C2PA 憑證則取決於你的生成工具是否嵌入。","cost":"無直接工具成本；屬流程與責任成本（需建立發佈前的揭露檢查項）。","trial":"不適用（建議在『確認表』加一欄『AI 揭露已標記？』作為發佈 checklist）。","api":"C2PA 內容憑證需由上游 AI 生成工具支援嵌入；平台 AI 標籤多為上傳時手動勾選，少數有 API 旗標可帶。"}]},{"key":"pm","label":"製作管理平台","stage":"專案/製作管理工具本身（資訊利用與共享方式）","picking":"挑「用什麼系統來管理整個節目團隊的製作進度、資源準備、檔案位置與會議」——也就是這套面板最終要落腳在哪個平台（買現成 SaaS、用 Google Workspace 拼、或繼續自建 web 面板），重點在團隊共享資訊與自動化的方式，而非單一功能。","criteria":["手機 App／PWA（手機是否好用、可否裝到桌面、離線能力）","即時協作（多人同時編輯、即時同步、@提及與留言）","看板／行事曆檢視（Kanban、Calendar、Timeline/Gantt 等多視圖）","與 Google Drive 整合（檔案連結、附件、嵌入預覽）","與 Gmail 整合（任務轉郵件、會議通知寄信）","與 Google Calendar 整合（截止日／會議自動同步行事曆）","自動化能力（內建自動化規則、Webhook、第三方串接如 n8n/Zapier）","成本（免費額度上限、付費起跳價、最低人數）","學習曲線（上手難度、設定複雜度）","API／可程式化（是否能用 Python/GAS 自動化，串接你們既有腳本）","資料可攜性／鎖定風險（匯出、自架、是否被平台綁死）","繁體中文介面與輸入體驗"],"options":[{"name":"Notion","type":"託管 SaaS（all-in-one 工作區）","desc":"把資料庫、文件、看板、行事曆、Wiki 合在一個工作區。同一份 Episode 資料可切換 Table/Board/Calendar/Timeline/Gallery 等多視圖。手機 App（iOS/Android）成熟、也提供 Web；可建子頁面把『會議記錄、檔案位置、資源清單』串在一起。繁體中文介面完整，中文輸入順。Drive/Gmail/Calendar 多為『連結嵌入或透過第三方（Zapier/Make/n8n）』而非深度雙向同步；2026 主打 AI Agent 可讀整個工作區。離線支援有限（行動端有部分快取，非完整離線）。","cost":"Free：個人無限頁面，多人協作有訪客與區塊限制；Plus 約 US$10/人/月（年付）、月付約 US$12；Business 約 US$15–18/人/月；AI 為加購。","trial":"Free 方案可長期免費試用；付費方案另有試用，兩人團隊可先用 Free 實測協作上限。","api":"有官方 REST API 與 Webhook（2025 起）；可用 Python/GAS 讀寫資料庫，適合接你們既有腳本與 Supabase 資料。"},{"name":"ClickUp","type":"託管 SaaS（功能最密集的 PM 平台）","desc":"單一平台涵蓋任務、文件、目標、儀表板、內建時間追蹤與螢幕錄影，視圖最多（List/Board/Calendar/Gantt/Timeline/Mind Map 等），適合把 A–G 七環節做成階段化工作流。手機 App 完整。內建自動化規則數量多，原生支援 Google Calendar 雙向同步、Google Drive 附件、Gmail 整合。功能多帶來較陡的學習曲線與介面資訊量大。中文介面有，但部分新功能以英文為主。","cost":"Free Forever：無限用戶與任務、100MB 儲存、自動化上限 100/月；Unlimited 約 US$7/人/月；Business 約 US$12/人/月。","trial":"Free Forever 永久免費；付費有試用期。兩人可先用免費版測自動化與多視圖。","api":"有完整 REST API、Webhook 與原生自動化；可用 Python/GAS 串接。"},{"name":"Trello","type":"託管 SaaS（輕量看板）","desc":"以 Kanban 看板為核心，卡片代表任務或一集 Episode，最容易上手、學習曲線最低。手機 App 輕快。可用 Power-Up 擴充行事曆視圖、Google Drive 附件、Calendar 同步等（部分進階 Power-Up 需付費方案）。原生資料庫弱、文件能力弱，複雜的多環節進度＋資源庫需靠 Power-Up 或外接補。中文介面完整。","cost":"Free：無限卡片、每工作區最多 10 個看板、自動化（Butler）250 次/月；Standard 約 US$5/人/月（年付）；Premium 約 US$10/人/月（年付，含 Calendar/Timeline 等視圖）。","trial":"Free 可長期使用；Premium 有試用。兩人團隊免費版的 10 看板上限通常夠用。","api":"有 REST API 與 Webhook，內建 Butler 自動化；可用 Python/GAS 串接。"},{"name":"Asana","type":"託管 SaaS（任務／專案管理）","desc":"任務與專案管理導向，List/Board/Timeline/Calendar 多視圖，工作流（Rules）自動化清楚，適合指派與追進度。手機 App 完整。原生整合 Google Calendar、Drive、Gmail 外掛。免費版有成員人數上限，部分視圖（Timeline）與進階規則需付費。中文介面有。","cost":"Free（Personal/Basic）：成員上限約 10–15 人、基本視圖；Premium/Starter 約 US$10.99/人/月（年付）、月付約 US$13.49；Business 約 US$24.99/人/月（年付）。","trial":"Free 可長期使用；付費有 30 天試用。兩人用免費版即可測指派與看板。","api":"有 REST API 與 Webhook；可用 Python/GAS 串接。"},{"name":"Airtable","type":"託管 SaaS（雲端資料庫／低程式碼）","desc":"本質是『可視化資料庫』，最貼近你們已設計的 Episode 資料模型與 Supabase 表結構；同一份資料可切 Grid/Kanban/Calendar/Gallery/Timeline 視圖，並用 Interface Designer 做客製化面板。手機 App 有。原生 Google Drive/Calendar 整合與 Automations（含 script 動作）。免費版每個 base 記錄數有上限（約 1,000 筆）、儲存與用戶數少。中文介面以英文為主、中文支援較弱。","cost":"Free：無限 base、每 base 約 1,000 筆記錄、5GB、約 2 名編輯者；Team 約 US$20/人/月；Business 約 US$45/人/月。","trial":"Free 可長期使用；Team 有試用。兩人實測時注意記錄數上限。","api":"有 REST API、Webhook 與內建 Automations（可寫 JavaScript script）；可用 Python/GAS 串接，遷移你們的資料模型相對直接。"},{"name":"Monday.com","type":"託管 SaaS（彩色看板／工作 OS）","desc":"以彩色狀態欄與多視圖（Board/Calendar/Timeline/Gantt/Kanban）著稱，視覺化進度直覺，適合做團隊節目排程牆。手機 App 完整。原生整合 Google Calendar、Drive、Gmail。內建自動化『食譜』。免費版限制較多（自動化少、視圖少），且付費常以最低席次數計（非 1 人也能買）。中文介面有。","cost":"Free：約 2 名席次、基本看板、無自動化；Basic/Standard 約 US$12/席/月（Standard，年付）起，付費常設最低席次數門檻。","trial":"有 14 天免費試用；Free 方案可長期但功能受限。","api":"有 GraphQL API、Webhook 與內建自動化；可用 Python/GAS 串接。"},{"name":"Google Workspace（Sheets / Docs / Keep / Calendar / Drive）","type":"雲端辦公套件（你們已在用的 Google 生態）","desc":"用 Google Sheets 當進度表＋資源清單、Docs 寫會議記錄、Keep 記快速備忘、Drive 放檔案、Calendar 排會議——全部原生互通，且就是你們指定的『會議記錄與資料放 Drive、寄信到 Gmail、加 Google 行事曆』的母體。即時協作與留言成熟，手機 App 齊全。沒有現成的『節目製作進度系統』樣板，看板/工作流需自行用 Sheets 設計或加外掛。自動化可用 Google Apps Script（你已熟）直接寫，免額外平台。","cost":"個人 Gmail 帳號免費即可用 Sheets/Docs/Keep/Drive/Calendar（Drive 15GB 共用額度）；Workspace 付費約 US$6–7/人/月起（自訂網域、更多儲存與管理）。","trial":"免費帳號可立即使用；Workspace 有試用。零額外成本即可開始。","api":"原生 Google Apps Script（GAS）＋ Sheets/Drive/Gmail/Calendar API，自動寄信、建行事曆事件、整理 Drive 都可直接寫；與你既有技能最契合。"},{"name":"Linear","type":"託管 SaaS（工程議題追蹤）","desc":"為軟體開發團隊設計的 issue tracker，速度快、鍵盤操作流暢、有 Cycles/Projects/Triage 與看板。手機 App（iOS/Android）有。深度整合偏 GitHub/Slack；Google Calendar/Drive/Gmail 多需透過第三方（Zapier/Make）而非原生。術語與工作流以軟體開發為主，套到內容製作需自行對映；介面為英文。較適合把『自建 web 面板的開發任務』本身管理起來，而非管理拍攝/錄音的內容流程。","cost":"Free：無最低人數、無限成員、議題數有上限；付費 Standard 約 US$8–10/人/月起。","trial":"Free 方案可長期試用。","api":"有 GraphQL API 與 Webhook；可用 Python 串接。"},{"name":"自建 web 面板（現有 HTML + Supabase 路線，可升級為 TypeScript + Tailwind PWA）","type":"開源自架／自寫（你們目前的路線）","desc":"延續現有單檔 HTML + supabase-js（已接 Supabase Realtime + RLS）做即時共編，未來可升級成 TypeScript + Tailwind 的 PWA，完全照節目團隊需求客製：Episode 進度、資源確認表、檔案位置、會議。優點是 100% 貼合 A–G 工作流、資料在自己手上、可直接用 Supabase Edge Functions/GAS 做『定會議→自動寄 Gmail＋產 Google 行事曆連結』；缺點是看板/行事曆/通知等都要自己開發與維護，沒有現成 App，PWA 的離線/推播需自行實作。手機體驗取決於你們的 RWD/PWA 設計。中文完全可控。","cost":"Supabase 免費方案（東京區，已建）＋ GitHub 即可起步；流量/儲存放大後依 Supabase 用量計費；主要成本是開發與維護時間。","trial":"已可立即在現有專案上實測，無額外訂閱。","api":"完全自主：Supabase Postgres/Realtime/Edge Functions ＋ 你熟的 Python/GAS，可任意串 Gmail/Calendar/Drive API，自動化天花板最高、也最需自己實作。"}]}]</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPA_URL = "https://uwowizckfmekyobnzykv.supabase.co";
+const SUPA_KEY = "sb_publishable_sfePZDxn5y4mXJkEOcpHoQ_5u_NZtbO";
+
+const CATALOG = JSON.parse(document.getElementById("catalog").textContent);
+const REVIEWERS = ["主持人 A", "主持人 B"];
+const TRIED = ["未試", "試用中", "已試"];
+const LEAN  = ["待定", "候選", "淘汰"];
+const LEANC = ["wait", "cand", "drop"];
+const DIMS  = [["quality","品質"],["ease","易用"],["cost_score","成本"],["integration","整合"]];
+
+const STORE = "podcast-tools-v1";
+let me = parseInt(localStorage.getItem("podcast-tools-me") || "0", 10);
+let curGroup = CATALOG[0].key;
+let state = loadLocal();
+let sb = null;
+
+// 建立 tool_id 與 catalog 對照
+const TOOLMAP = {};
+CATALOG.forEach(g => g.options.forEach((o, i) => {
+  const tid = g.key + "_" + String(i).padStart(2, "0");
+  TOOLMAP[tid] = { gkey: g.key, o: o };
+  o._tid = tid;
+}));
+
+function loadLocal(){ try{ return JSON.parse(localStorage.getItem(STORE)) || {}; }catch(e){ return {}; } }
+function saveLocal(){ localStorage.setItem(STORE, JSON.stringify(state)); }
+function revId(tid, r){ return tid + "__" + r; }
+function getRev(tid, r){ return state[revId(tid, r)] || {}; }
+
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+
+// ---- 畫面 ----
+function renderTabs(){
+  document.getElementById("tabs").innerHTML = CATALOG.map(g =>
+    `<button class="${g.key===curGroup?'on':''}" onclick="setGroup('${g.key}')">${esc(g.label)}</button>`
+  ).join("");
+}
+function leanBadges(tid){
+  return [0,1].map(r => {
+    const v = getRev(tid, r).lean;
+    const has = (v !== undefined && v !== null);
+    return `<span class="lb ${has?LEANC[v]:'wait muted'}">${REVIEWERS[r][3]}:${has?LEAN[v]:'—'}</span>`;
+  }).join("");
+}
+function triedMini(tid){
+  const t = getRev(tid, me).tried || 0;
+  return `<span class="triedmini">我:${TRIED[t]}</span>`;
+}
+function stars(tid, dim){
+  const v = getRev(tid, me)[dim] || 0;
+  let h = `<span class="stars">`;
+  for(let n=1;n<=5;n++) h += `<button class="${n<=v?'on':''}" onclick="setScore('${tid}','${dim}',${n})" aria-label="${n}星">${n<=v?'★':'☆'}</button>`;
+  return h + `</span>`;
+}
+function seg(tid, field, labels, cls){
+  const v = getRev(tid, me)[field] || 0;
+  return `<span class="seg2 ${cls||''}">` + labels.map((l,i) =>
+    `<button data-v="${i}" class="${v===i?'on':''}" onclick="setField('${tid}','${field}',${i})">${l}</button>`
+  ).join("") + `</span>`;
+}
+function otherSummary(tid){
+  const r = 1 - me, o = getRev(tid, r);
+  const filled = (o.quality||o.ease||o.cost_score||o.integration||o.tried||o.lean!==undefined||o.note);
+  if(!filled) return `<span class="nm${r}">${REVIEWERS[r]}</span>：尚未評估`;
+  const sc = DIMS.map(d => `${d[1]}${o[d[0]]||0}`).join("・");
+  const ln = (o.lean!==undefined&&o.lean!==null) ? `傾向「${LEAN[o.lean]}」` : "傾向未定";
+  const nt = o.note ? `<br><span class="onote">「${esc(o.note)}」</span>` : "";
+  return `<span class="nm${r}">${REVIEWERS[r]}</span>：${TRIED[o.tried||0]}・${sc}・${ln}${nt}`;
+}
+function toolCard(o, i){
+  const tid = o._tid;
+  return `<details class="tool" id="d_${tid}">
+    <summary>
+      <span class="tname">${esc(o.name)}</span>
+      <span class="ttype">${esc(o.type)}</span>
+      <span class="leans">${triedMini(tid)} ${leanBadges(tid)}</span>
+    </summary>
+    <div class="body">
+      <div class="spec">${esc(o.desc)}</div>
+      <div class="kv"><b>成本</b>${esc(o.cost)}</div>
+      <div class="kv"><b>試用</b>${esc(o.trial)}</div>
+      <div class="kv"><b>API</b>${esc(o.api)}</div>
+      <div class="rev">
+        <div class="revhd">我的評估（<span class="me${me}">${REVIEWERS[me]}</span>）</div>
+        <div class="field"><span class="flabel">試用</span>${seg(tid,'tried',TRIED)}</div>
+        ${DIMS.map(d => `<div class="field"><span class="flabel">${d[1]}</span>${stars(tid,d[0])}</div>`).join("")}
+        <div class="field"><span class="flabel">傾向</span>${seg(tid,'lean',LEAN,'lean')}</div>
+        <textarea class="note" placeholder="試用筆記（只記在我的欄位）" onchange="setNote('${tid}',this.value)">${esc(getRev(tid,me).note||"")}</textarea>
+      </div>
+      <div class="other" id="other_${tid}">${otherSummary(tid)}</div>
+    </div>
+  </details>`;
+}
+function renderGroup(){
+  const g = CATALOG.find(x => x.key === curGroup);
+  document.getElementById("panel").innerHTML =
+    `<div class="picking">${esc(g.picking)}</div>` +
+    `<div class="crit">${g.criteria.map(c => `<span class="cchip">${esc(c)}</span>`).join("")}</div>` +
+    g.options.map((o, i) => toolCard(o, i)).join("");
+}
+function updateCard(tid){
+  const el = document.getElementById("d_" + tid);
+  if(!el){ updateTally(); return; }
+  const open = el.open;
+  const m = TOOLMAP[tid]; if(!m) return;
+  const idx = CATALOG.find(x => x.key === m.gkey).options.indexOf(m.o);
+  el.outerHTML = toolCard(m.o, idx);
+  const ne = document.getElementById("d_" + tid); if(ne) ne.open = open;
+  updateTally();
+}
+function updateTally(){
+  let tried = 0, tot = 0;
+  for(const tid in TOOLMAP){ tot++; if((getRev(tid, me).tried || 0) === 2) tried++; }
+  document.getElementById("tally").textContent = `我（${REVIEWERS[me]}）已試 ${tried} / ${tot}`;
+}
+function renderWho(){
+  document.querySelectorAll("#whoSeg button").forEach(b =>
+    b.classList.toggle("on", parseInt(b.dataset.r,10) === me));
+}
+
+// ---- 互動 ----
+function setMe(r){ me = r; localStorage.setItem("podcast-tools-me", String(r)); renderWho(); renderGroup(); updateTally(); }
+function setGroup(k){ curGroup = k; renderTabs(); renderGroup(); }
+function mutate(tid, patch){
+  const id = revId(tid, me);
+  state[id] = Object.assign({ tool_id: tid, reviewer: me }, state[id], patch);
+  saveLocal(); updateCard(tid); push(tid);
+}
+function setField(tid, field, v){ mutate(tid, { [field]: v }); }
+function setScore(tid, dim, v){ const cur = getRev(tid, me)[dim] || 0; mutate(tid, { [dim]: (cur === v ? 0 : v) }); }
+function setNote(tid, val){ mutate(tid, { note: val }); }
+
+// ---- 即時同步 ----
+function setSync(txt, on){ const el = document.getElementById("sync"); el.textContent = txt; el.className = "sync" + (on ? " on" : ""); }
+async function push(tid){
+  if(!sb) return;
+  const r = getRev(tid, me);
+  try{
+    await sb.from("tool_reviews").upsert({
+      id: revId(tid, me), tool_id: tid, reviewer: me,
+      tried: r.tried||0, quality: r.quality||0, ease: r.ease||0,
+      cost_score: r.cost_score||0, integration: r.integration||0,
+      note: r.note||"", lean: r.lean||0, updated_at: new Date().toISOString()
+    });
+  }catch(e){}
+}
+async function initSync(){
+  if(!window.supabase){ setSync("離線（僅本機）", false); return; }
+  try{
+    sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+    const { data, error } = await sb.from("tool_reviews").select("*");
+    if(error) throw error;
+    (data || []).forEach(row => {
+      state[row.id] = { tool_id: row.tool_id, reviewer: row.reviewer, tried: row.tried,
+        quality: row.quality, ease: row.ease, cost_score: row.cost_score,
+        integration: row.integration, note: row.note, lean: row.lean };
+    });
+    saveLocal(); renderGroup(); updateTally();
+    sb.channel("tools")
+      .on("postgres_changes", { event: "*", schema: "public", table: "tool_reviews" }, p => {
+        const row = p.new; if(!row || !row.id) return;
+        state[row.id] = { tool_id: row.tool_id, reviewer: row.reviewer, tried: row.tried,
+          quality: row.quality, ease: row.ease, cost_score: row.cost_score,
+          integration: row.integration, note: row.note, lean: row.lean };
+        saveLocal(); updateCard(row.tool_id);
+      })
+      .subscribe(st => { if(st === "SUBSCRIBED") setSync("● 即時同步中", true); });
+  }catch(e){ setSync("離線（僅本機）", false); }
+}
+
+renderWho();
+renderTabs();
+renderGroup();
+updateTally();
+initSync();
+</script>
+</body>
+</html>
