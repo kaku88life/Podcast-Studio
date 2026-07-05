@@ -1,0 +1,82 @@
+{
+  "note": "Podcast 製作的 Google Drive 結構。家＝現有共用資料夾『Podcast (Adoro x Kaku)』(Hiro 持有，分享給團隊)。A–G 對應製作環節。供『檔案地圖』模組與 GAS 引用。",
+  "updatedAt": "2026-06-17",
+  "home": {
+    "name": "Podcast (Adoro x Kaku)",
+    "id": "1gvMHEt-fH0KNb-4-hV7j-MYmOuRudFNW",
+    "owner": "hiro.nango@ado-ro.com",
+    "url": "https://drive.google.com/drive/folders/1gvMHEt-fH0KNb-4-hV7j-MYmOuRudFNW"
+  },
+  "areas": {
+    "00_ADMIN_營運管理": {
+      "id": "1v5EyWNwf6CpA69XzkgcDLxgCw5-uhm71",
+      "children": {
+        "Meetings_會議記錄": {
+          "id": "1fHXDwgLesj1oUDwHX_9x_1LFp8FjTk_u",
+          "children": {
+            "_Templates": "1UNQ9W4DtLYnPcwVb1EpgH5sgdMwZ3DWD",
+            "2026": "1q5yUpe7tjRreGuxXmAYyISnd-nTlEuj6",
+            "_Archive": "1VzMs2wpIEZikE-wv1TzC9zh0fJV5UPrq"
+          }
+        },
+        "節目規劃_Planning": "1m3vaLrVot2abnUWZJTEyNvOYNan5lxDX",
+        "工具評估_ToolEval": "1fPHdMLcYJvqWTYi8d_JWdFb99u-FxKFY",
+        "法務帳務_Legal-Finance": "1IcPkf88suKRfjQQZbN-hmEooFiFQ2NeC"
+      }
+    },
+    "10_SHARED_ASSETS_共用資產": {
+      "id": "16d-KsFueBJW_rVXRC15jR0ktFwYSVXSZ",
+      "children": {
+        "品牌識別_Brand": "1_Qlcd0-3GeONOXwxSlWU3qDdxm1yTq8R",
+        "語音模型_VoiceModels": "1RRrLmNFDS43pwURhn3VUDdgy2kzfbXIP",
+        "音樂音效_Music": "1cXLsJZWzPYydLyY8QH7GTgY8Jadxzeyi",
+        "視覺素材庫_Visuals": "1WrMdhjP1z2_NJTbJVTVsbUStTTD1TFlb",
+        "主題知識庫_Knowledge": "15XOvfo74kB4Wzgu6-2vcM6_54H7L5gRe"
+      }
+    },
+    "20_EPISODES_每集製作": {
+      "id": "1pTEZeupaWcQ8mf7WEHb-5bxK2XCs3F6Q",
+      "children": {
+        "EP000_範本_TEMPLATE": {
+          "id": "1Gg8CcoMLCprywHD6sjJQ455Z0vIk5Mpa",
+          "children": {
+            "A_企劃_Plan": "1InIWgrdwE7MIchLYDy6wpVEiG371oMkP",
+            "B_腳本_Script": "1gGJdWd2NlsaEG_6zS3QXSv1DngW9s4um",
+            "C_語音_Voice": "1AbO4PQU-1Dzd2jXW5jYIxu_8ODDC3TYb",
+            "D_視覺_Visual": "1IJspyHYQnf4K1B0dth2wNlIVBzlmAyv6",
+            "E_剪輯_Edit": "107y-21j2v80mRFu8BFwdc0UXuyluE2aK",
+            "F_包裝_Package": "1c1bSJC7n3xRzVAigJmrQlJ53X5r3Dm1v",
+            "G_發佈_Publish": "1UAlGuK5B025PfaWKNIKvZFPC85Mp-Szp"
+          }
+        },
+        "EP001_第一集": {
+          "id": "1HgAWGhiAQMQ_MlDoFP2qCz4oEBmI-AMJ",
+          "children": {
+            "A_企劃_Plan": "143w8YPDIMuFg8GIzvkLxCajgjiOosfvc",
+            "B_腳本_Script": "1yb--P6Ekt2Rq42IYeiRG164-jDuykoxq",
+            "C_語音_Voice": "1ZJ7D_tKppKckB2gcY71mFK12YbicZwCn",
+            "D_視覺_Visual": "1xLlLVkCqsItr97F8eB0oRAVEVPMAqCbt",
+            "E_剪輯_Edit": "1qg-jfTozV-qwsoYI8owk3ckOsq-QPI3l",
+            "F_包裝_Package": "1bbD6W0fiTSJ-sH1n4XUNJkg2YOVlvoan",
+            "G_發佈_Publish": "1JV4zFwfpTqBTmVyFHx2Mg5J3iXfKRe-Y"
+          }
+        }
+      }
+    }
+  },
+  "docs": {
+    "_README_資料夾使用說明": "1u21XsNcQgHax5EoZr4FVtEIbVqph6JzoOtCXIAHu7gM",
+    "_會議記錄範本_MeetingTemplate": "1O0JRWFeAMT1sbt4Y3CtQHGWzFO2Sqk3-7RckzAvL6IM"
+  },
+  "existingFilesToMigrate": {
+    "Episode 1 (Slides)": "1BSycbqsTcbErI-U-XLrTn6yUKaM-hrQDnfyZEgpcVus",
+    "第一集草稿 (Hiro)": "1JSWomhnb52--64C_J7T-SyejrFeqkdYtaIN86-sMWPM",
+    "SNS Sample": "1vJbAkv5Sr2Gp0lWuH8r_oy5QDQZjfBAdNkaIs9mfMpk",
+    "會議記錄 (舊資料夾)": "1K6wpVJsy5Zyj2riYVCqmz0xM71uyMHkk",
+    "Recording (資料夾)": "1ws3oUhgzx_SMNQl_bIcl9-bG5RU86htl"
+  },
+  "deprecated": {
+    "note": "先前誤建在 kaku 個人 Drive 的空 PodcastStudio，待移除（GAS cleanupOldPersonalHub 或手動）",
+    "PodcastStudio_personal": "1W2G2vzGeVbPvum3Bph7c9dTr2c78IxhX"
+  }
+}
