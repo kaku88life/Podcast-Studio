@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Podcast Studio 製作流程與資源準備清單</title>
+<style>
+  /* 配色：固定淺色主題，確保傳給夥伴在任何裝置都一致好讀 */
+  :root{
+    --bg:#ffffff; --surface:#faf9f5; --surface2:#f3f1ea;
+    --text:#201f1c; --muted:#6b6a63; --hint:#97968d;
+    --border:rgba(0,0,0,.12); --border2:rgba(0,0,0,.24);
+    --info:#185FA5; --infobg:#E6F1FB;
+    --radius:12px; --radius-sm:8px;
+    --grn:#639922; --cor:#D85A30; --amb:#EF9F27; --blu:#378ADD;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--surface2); color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI","Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
+    line-height:1.5; padding:1.5rem 1rem 3rem;
+  }
+  .wrap{max-width:880px; margin:0 auto;}
+  header h1{font-size:1.35rem; margin:0 0 .25rem;}
+  header p{margin:.15rem 0; color:var(--muted); font-size:.85rem;}
+
+  /* 流程帶 */
+  .flow{display:flex; flex-wrap:wrap; align-items:stretch; gap:.35rem; margin:1rem 0 .4rem;}
+  .fstep{flex:1 1 110px; min-width:104px; background:var(--bg); border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:.45rem .5rem; position:relative;}
+  .fstep .fn{font-size:.7rem; color:var(--hint);}
+  .fstep .ft{font-size:.82rem; font-weight:600;}
+  .fstep .fg{display:inline-block; margin-top:.2rem; font-size:.66rem; color:#854F0B;
+    background:#FAEEDA; border:1px solid #EF9F27; border-radius:999px; padding:.02rem .35rem;}
+  .flow-note{font-size:.74rem; color:var(--hint); margin:.1rem 0 1.1rem;}
+
+  /* 控制列 */
+  .bar{position:sticky; top:0; z-index:5; background:var(--surface2);
+    padding:.6rem 0 .5rem; margin-bottom:.5rem; border-bottom:1px solid var(--border);}
+  .pbar{height:10px; background:var(--surface); border:1px solid var(--border);
+    border-radius:999px; overflow:hidden;}
+  .pbar > i{display:block; height:100%; width:0; background:var(--grn); transition:width .25s ease;}
+  .bar-row{display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; margin-bottom:.4rem;}
+  .bar-row .count{font-weight:700; font-size:.9rem;}
+  .bar-row .sync{font-size:.74rem; color:var(--hint); display:inline-flex; align-items:center; gap:.25rem;}
+  .bar-row .sync.on{color:#0F6E56;}
+  .bar-row .spacer{flex:1;}
+  button.act{font:inherit; font-size:.78rem; cursor:pointer; background:var(--bg);
+    border:1px solid var(--border2); border-radius:var(--radius-sm); padding:.3rem .65rem; color:var(--text);}
+  button.act:hover{background:var(--surface);}
+  button.act.primary{background:var(--info); color:#fff; border-color:var(--info);}
+
+  /* 圖例 */
+  .legend{display:flex; flex-wrap:wrap; gap:.4rem 1rem; font-size:.74rem; color:var(--muted); margin:.1rem 0 1rem;}
+  .legend span{display:inline-flex; align-items:center; gap:.3rem;}
+  .dot{width:10px; height:10px; border-radius:3px; display:inline-block; flex:0 0 auto;}
+
+  /* 群組 */
+  .group{background:var(--bg); border:1px solid var(--border); border-radius:var(--radius);
+    margin-bottom:.85rem; overflow:hidden;}
+  .ghead{display:flex; align-items:center; gap:.5rem; padding:.6rem .85rem; background:var(--surface);
+    border-bottom:1px solid var(--border); cursor:pointer; user-select:none;}
+  .ghead h3{margin:0; font-size:.95rem; flex:1;}
+  .ghead .gp{font-size:.74rem; color:var(--muted);}
+  .ghead .gmini{width:70px; height:6px; background:var(--surface2); border-radius:999px; overflow:hidden;}
+  .ghead .gmini > i{display:block; height:100%; width:0; background:var(--grn);}
+  .gbody{padding:.35rem .5rem .5rem;}
+
+  /* 項目 */
+  .item{display:flex; align-items:flex-start; gap:.6rem; padding:.5rem .55rem; border-radius:var(--radius-sm);}
+  .item:hover{background:var(--surface);}
+  .item.done{opacity:.62;}
+  .item.done .label{text-decoration:line-through;}
+  .item input[type=checkbox]{width:19px; height:19px; margin-top:.12rem; flex:0 0 auto; cursor:pointer; accent-color:var(--grn);}
+  .item .main{flex:1; min-width:0;}
+  .item .label{font-size:.9rem;}
+  .item .note{font-size:.74rem; color:var(--hint); margin-top:.1rem;}
+  .item .meta{display:flex; align-items:center; gap:.45rem; flex-shrink:0; margin-top:.1rem;}
+  .owner{font:inherit; font-size:.72rem; cursor:pointer; border:1px solid var(--border2);
+    background:var(--bg); border-radius:999px; padding:.12rem .5rem; color:var(--muted); white-space:nowrap;}
+  .owner[data-o="1"]{background:#E6F1FB; color:#0C447C; border-color:#85B7EB;}
+  .owner[data-o="2"]{background:#EEEDFE; color:#3C3489; border-color:#AFA9EC;}
+  .owner[data-o="3"]{background:#E1F5EE; color:#0F6E56; border-color:#5DCAA5;}
+
+  .footnote{font-size:.76rem; color:var(--hint); margin-top:1.2rem; line-height:1.6;}
+  .toast{position:fixed; left:50%; bottom:1.2rem; transform:translateX(-50%);
+    background:var(--text); color:#fff; font-size:.8rem; padding:.5rem .9rem; border-radius:999px;
+    opacity:0; transition:opacity .2s; pointer-events:none;}
+  .toast.show{opacity:.95;}
+  @media (max-width:560px){
+    .item .meta{margin-left:0;}
+    .ghead .gmini{display:none;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>日本不動產 Podcast — 製作流程與資源準備清單</h1>
+    <p>兩人自然閒聊是「原料」，AI 是「放大器」。下面把要準備的東西列成可勾選清單，方便我們一起對齊與分工。</p>
+    <p>勾選會自動記在這台裝置的瀏覽器；想同步給對方，按上方「複製進度連結」互傳即可。</p>
+    <nav style="display:flex;gap:.5rem;margin:.5rem 0 .2rem;font-size:.82rem;flex-wrap:wrap;">
+      <a href="board.html" style="padding:.25rem .6rem;border:1px solid var(--border);border-radius:999px;text-decoration:none;background:var(--bg);color:var(--muted);">節目看板</a>
+      <a href="tools-checklist.html" style="padding:.25rem .6rem;border:1px solid var(--border);border-radius:999px;text-decoration:none;background:var(--bg);color:var(--muted);">工具確認表</a>
+      <a href="prep-checklist.html" style="padding:.25rem .6rem;border:1px solid var(--info);border-radius:999px;text-decoration:none;background:var(--info);color:#fff;">資源準備清單</a>
+    </nav>
+  </header>
+
+  <!-- 流程帶（參考用，非勾選） -->
+  <div class="flow" id="flow"></div>
+  <div class="flow-note">★ 標記＝必須人工把關的核心閘門（腳本定稿／語音試聽／數據查證／成片簽核）。環節 7 為底層自動化骨幹，學弟知道即可。</div>
+
+  <!-- 控制列 -->
+  <div class="bar">
+    <div class="bar-row">
+      <span class="count" id="count">0 / 0 完成</span>
+      <span class="sync" id="sync">連線中…</span>
+      <span class="spacer"></span>
+      <button class="act primary" onclick="copyLink()">複製進度連結</button>
+      <button class="act" onclick="resetAll()">全部清除</button>
+    </div>
+    <div class="pbar"><i id="pfill"></i></div>
+  </div>
+
+  <div class="legend">
+    <span><i class="dot" style="background:var(--grn)"></i>可複用／免費就緒</span>
+    <span><i class="dot" style="background:var(--cor)"></i>待尋找・確認・採購</span>
+    <span><i class="dot" style="background:var(--amb)"></i>待嘗試・驗證品質</span>
+    <span><i class="dot" style="background:var(--blu)"></i>待開發・部署</span>
+  </div>
+
+  <div id="groups"></div>
+
+  <p class="footnote">
+    分工標記：點右側膠囊可切換「未指派 → 你 → 學弟 → 共同」。<br>
+    第一階段（MVP）只跑通環節 1→5，先出一支 YouTube 長片；環節 6 多平台、環節 7 全自動之後再補。<br>
+    最該先動手驗證：<b>ElevenLabs 繁中克隆品質</b> 與 <b>雙軌錄音轉錄</b>——這兩關過了，整個案子才成立。
+  </p>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// === Supabase 即時共編設定（兩人開同一份檔即時同步） ===
+const SUPA_URL = "https://uwowizckfmekyobnzykv.supabase.co";
+const SUPA_KEY = "sb_publishable_sfePZDxn5y4mXJkEOcpHoQ_5u_NZtbO";
+
+// 流程帶資料
+const FLOW = [
+  {n:"環節 1", t:"選題 + 捕捉", gate:"★ 選題拍板"},
+  {n:"環節 2", t:"腳本化", gate:"★ 逐句定稿"},
+  {n:"環節 3", t:"語音合成", gate:"★ 試聽情緒"},
+  {n:"環節 4", t:"視覺生成", gate:"★ 數據查證"},
+  {n:"環節 5", t:"組裝 + 後製", gate:"★ 成片簽核"},
+  {n:"環節 6", t:"轉化 + 發佈", gate:"揭露勾選"},
+  {n:"環節 7", t:"資產 + 編排", gate:"自動骨幹"},
+];
+
+// 待辦清單資料：status 控制狀態色，note 為補充說明
+const DATA = [
+  {key:"hw", title:"硬體設備", items:[
+    {id:"hw_mic",   label:"麥克風 ×2（雙軌各一支）", status:"cor", note:"雙人各錄一軌，speaker 才會準"},
+    {id:"hw_room",  label:"安靜錄音空間（簡單吸音／隔音）", status:"cor"},
+    {id:"hw_phone", label:"監聽耳機（試聽合成語音用）", status:"cor"},
+    {id:"hw_pc",    label:"影片渲染電腦（CPU 佳，有 GPU 更好）", status:"cor", note:"本機渲染 Remotion；之後可改上雲"},
+  ]},
+  {key:"sw", title:"軟體與帳號", items:[
+    {id:"sw_claude",  label:"Claude API 帳號／key（腳本化）", status:"cor"},
+    {id:"sw_eleven",  label:"ElevenLabs 帳號（語音克隆・核心）", status:"amb", note:"約 $22/月起，先用試用驗證繁中品質"},
+    {id:"sw_remotion",label:"Remotion 開發環境（影片，免費可商用）", status:"grn"},
+    {id:"sw_img",     label:"Nano Banana Pro／Flux 2（AI 配圖）", status:"amb"},
+    {id:"sw_vizard",  label:"Vizard（Shorts 自動切片）", status:"amb"},
+    {id:"sw_postiz",  label:"Postiz 自架（多平台發佈）", status:"blu"},
+    {id:"sw_yt",      label:"YouTube 頻道", status:"cor"},
+    {id:"sw_podcast", label:"Podcast 託管／RSS", status:"cor"},
+    {id:"sw_social",  label:"IG／FB／Threads／Spotify 帳號", status:"cor"},
+  ]},
+  {key:"ct", title:"內容與品牌", items:[
+    {id:"ct_pillar", label:"節目 pillar 主題 5–6 條（討論定案）", status:"amb", note:"稅制／法規／市場數據／金流房貸／實務踩雷／跨境買房"},
+    {id:"ct_name",   label:"節目名稱", status:"cor"},
+    {id:"ct_brand",  label:"Logo／配色／字型", status:"cor"},
+    {id:"ct_bgm",    label:"片頭尾／授權 BGM", status:"cor"},
+    {id:"ct_gloss",  label:"日本不動產日文詞庫整理", status:"amb", note:"区分所有／利回り／重要事項説明／路線価…"},
+    {id:"ct_data",   label:"日本官方數據來源清單", status:"cor", note:"地価公示／房貸利率／稅率（國土交通省等）"},
+  ]},
+  {key:"cp", title:"合規前置", items:[
+    {id:"cp_consent", label:"學弟「書面同意克隆聲音」", status:"cor", note:"合作前提，先簽一筆"},
+    {id:"cp_label",   label:"各平台 AI 內容揭露方式確認", status:"cor", note:"YouTube／IG 等照實勾選即合規"},
+  ]},
+  {key:"ex", title:"先驗證的關鍵實驗（最重要）", items:[
+    {id:"ex_rec",   label:"試錄一段雙軌 → 跑轉錄品質", status:"amb"},
+    {id:"ex_clone", label:"ElevenLabs 繁中克隆試聽（各錄 3–5 分語料）", status:"amb"},
+    {id:"ex_chain", label:"一句話 → 合成語音 → Remotion 排版 跑通", status:"amb"},
+  ]},
+  {key:"dev", title:"工程開發（你主導，學弟知道即可）", items:[
+    {id:"dev_script", label:"腳本化 pipeline ＋ 逐句覆核介面", status:"blu"},
+    {id:"dev_voice",  label:"語音合成串接（含 cue_id 時間碼）", status:"blu"},
+    {id:"dev_remo",   label:"Remotion 影片模板（被 cue list 驅動）", status:"blu"},
+    {id:"dev_orch",   label:"編排骨幹（狀態機 ＋ 任務佇列）", status:"blu"},
+  ]},
+];
+
+const STORE = "podcast-prep-v1";
+const OWNERS = ["指派分工","你","學弟","共同"];
+const COLOR = {grn:"var(--grn)", cor:"var(--cor)", amb:"var(--amb)", blu:"var(--blu)"};
+let state = load();
+
+function load(){
+  // 優先讀網址 hash（互傳的進度連結），否則讀本機
+  try{
+    const h = new URLSearchParams(location.hash.slice(1)).get("s");
+    if(h){
+      const obj = JSON.parse(decodeURIComponent(escape(atob(h))));
+      localStorage.setItem(STORE, JSON.stringify(obj));
+      history.replaceState(null,"",location.pathname);
+      return obj;
+    }
+  }catch(e){}
+  try{ return JSON.parse(localStorage.getItem(STORE)) || {}; }catch(e){ return {}; }
+}
+function save(){ localStorage.setItem(STORE, JSON.stringify(state)); }
+
+function renderFlow(){
+  document.getElementById("flow").innerHTML = FLOW.map(s =>
+    `<div class="fstep"><div class="fn">${s.n}</div><div class="ft">${s.t}</div><div class="fg">${s.gate}</div></div>`
+  ).join("");
+}
+
+function renderGroups(){
+  const root = document.getElementById("groups");
+  root.innerHTML = DATA.map(g => {
+    const rows = g.items.map(it => {
+      const st = state[it.id] || {};
+      const done = !!st.done;
+      const owner = st.owner || 0;
+      return `<div class="item ${done?'done':''}" data-id="${it.id}">
+        <input type="checkbox" ${done?'checked':''} onchange="toggle('${it.id}',this.checked)">
+        <div class="main">
+          <div class="label">${it.label}</div>
+          ${it.note?`<div class="note">${it.note}</div>`:''}
+        </div>
+        <div class="meta">
+          <span class="dot" style="background:${COLOR[it.status]}" title="狀態"></span>
+          <button class="owner" data-o="${owner}" onclick="cycleOwner('${it.id}')">${OWNERS[owner]}</button>
+        </div>
+      </div>`;
+    }).join("");
+    return `<div class="group">
+      <div class="ghead" onclick="toggleGroup(this)">
+        <h3>${g.title}</h3>
+        <span class="gp" id="gp_${g.key}"></span>
+        <span class="gmini"><i id="gm_${g.key}"></i></span>
+      </div>
+      <div class="gbody">${rows}</div>
+    </div>`;
+  }).join("");
+  updateProgress();
+}
+
+function toggle(id, checked){
+  state[id] = Object.assign({}, state[id], {done:checked});
+  save();
+  const row = document.querySelector(`.item[data-id="${id}"]`);
+  if(row) row.classList.toggle("done", checked);
+  updateProgress();
+  push(id);
+}
+function cycleOwner(id){
+  const cur = (state[id] && state[id].owner) || 0;
+  const next = (cur + 1) % OWNERS.length;
+  state[id] = Object.assign({}, state[id], {owner:next});
+  save();
+  const btn = document.querySelector(`.item[data-id="${id}"] .owner`);
+  if(btn){ btn.dataset.o = next; btn.textContent = OWNERS[next]; }
+  push(id);
+}
+// 把單一項目的最新狀態套回畫面（收到對方的即時更新時用）
+function applyItem(id){
+  const row = document.querySelector(`.item[data-id="${id}"]`);
+  if(!row){ updateProgress(); return; }
+  const s = state[id] || {};
+  const cb = row.querySelector('input[type=checkbox]');
+  if(cb) cb.checked = !!s.done;
+  row.classList.toggle("done", !!s.done);
+  const btn = row.querySelector('.owner');
+  if(btn){ const o = s.owner || 0; btn.dataset.o = o; btn.textContent = OWNERS[o]; }
+  updateProgress();
+}
+function toggleGroup(head){
+  const body = head.nextElementSibling;
+  body.style.display = body.style.display === "none" ? "" : "none";
+}
+function updateProgress(){
+  let total=0, done=0;
+  DATA.forEach(g => {
+    let gt=0, gd=0;
+    g.items.forEach(it => { gt++; total++; if(state[it.id] && state[it.id].done){ gd++; done++; } });
+    const gp = document.getElementById("gp_"+g.key);
+    const gm = document.getElementById("gm_"+g.key);
+    if(gp) gp.textContent = gd+"/"+gt;
+    if(gm) gm.style.width = gt? Math.round(gd/gt*100)+"%" : "0";
+  });
+  document.getElementById("count").textContent = done+" / "+total+" 完成";
+  document.getElementById("pfill").style.width = total? Math.round(done/total*100)+"%" : "0";
+}
+function resetAll(){
+  if(!confirm("確定清除所有勾選與分工？")) return;
+  state = {}; save(); renderGroups();
+}
+function copyLink(){
+  const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+  const url = location.origin + location.pathname + "#s=" + b64;
+  navigator.clipboard.writeText(url).then(
+    ()=>toast("已複製進度連結，傳給對方開啟即可同步"),
+    ()=>toast("複製失敗，請手動複製網址列")
+  );
+}
+let toastT;
+function toast(msg){
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  clearTimeout(toastT); toastT = setTimeout(()=>el.classList.remove("show"), 2200);
+}
+
+// === 即時同步：連線、載入、訂閱變更 ===
+let sb = null;
+function setSync(txt, on){
+  const el = document.getElementById("sync");
+  el.textContent = txt; el.className = "sync" + (on ? " on" : "");
+}
+async function push(id){
+  if(!sb) return;
+  const s = state[id] || {};
+  try{
+    await sb.from("prep_items").upsert({
+      id: id, done: !!s.done, owner: s.owner || 0, updated_at: new Date().toISOString()
+    });
+  }catch(e){}
+}
+async function initSync(){
+  if(!(window.supabase && SUPA_URL.indexOf("http") === 0)){ setSync("離線（僅本機）", false); return; }
+  try{
+    sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+    const { data, error } = await sb.from("prep_items").select("*");
+    if(error) throw error;
+    if((data || []).length === 0){
+      // 雲端是空的：把這台已勾選的狀態上傳當初始值
+      for(const id in state){ await push(id); }
+    }else{
+      // 以雲端共享狀態為準，覆蓋本機
+      (data || []).forEach(r => { state[r.id] = { done: r.done, owner: r.owner }; });
+      save(); renderGroups();
+    }
+    sb.channel("prep")
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_items" }, p => {
+        const r = p.new; if(!r || !r.id) return;
+        state[r.id] = { done: r.done, owner: r.owner }; save(); applyItem(r.id);
+      })
+      .subscribe(st => { if(st === "SUBSCRIBED") setSync("● 即時同步中", true); });
+  }catch(e){ setSync("離線（僅本機）", false); }
+}
+
+renderFlow();
+renderGroups();
+initSync();
+</script>
+</body>
+</html>
